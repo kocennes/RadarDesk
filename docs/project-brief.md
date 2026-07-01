@@ -97,3 +97,20 @@ Bu proje basarili sayilirsa kullanici sunlari yapabiliyor olur:
 - Basit backend endpoint yazma.
 - PostgreSQL'e temel veri kaydetme/okuma.
 - Ucretsiz platformlara deploy etme.
+
+## Arastirma Sonrasi MVP Gelistirme Notlari
+
+2026-07-01 tarihinde mevcut repo ve resmi/ana dokumanlar incelenerek asagidaki gelistirme yonu belirlendi:
+
+- Frontend MVP calisir durumda oldugu icin sonraki buyume adimi `App.tsx` icindeki UI parcalarini feature componentlerine ayirmaktir.
+- Mock veriden mock API'ye geciste ekranlarin davranisi degismemeli; once typed service/helper katmani eklenmeli, sonra backend endpointlerine baglanilmalidir.
+- Backend baslarken `/health`, `/api/devices`, `/api/alerts`, `/api/projects` endpointleriyle ilerlenmeli; form kaydi icin sadece izin verilen alanlar kabul edilmelidir.
+- Harita tarafi mock koordinatlarla kalmali; gercek musteri koordinati veya saha verisi kullanilmamalidir.
+- Test stratejisi mevcut unit testleri koruyup coverage raporu eklemeyi degerlendirmelidir.
+
+Kaynak notlari:
+
+- React `useMemo`, render sirasindaki hesaplamalari cache'lemek icin vardir; bu projede sadece buyuyen veri setlerinde veya olculen performans sorunlarinda kullanilmali.
+- React erisilebilirlik dokumani form kontrollerinin etiketlenmesini vurgular; dashboard form ve filtrelerinde bu kontrol korunmalidir.
+- Vite dokumani `VITE_` ile baslayan env degerlerinin client bundle'a acildigini belirtir; secret'lar frontend env degiskeni olmamalidir.
+- OWASP API Security 2023, obje ve obje alani yetkilendirmesini ayri riskler olarak ele alir; backend endpointleri ID ve alan bazli yetki kontrolu yapacak sekilde tasarlanmalidir.

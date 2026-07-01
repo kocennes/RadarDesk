@@ -32,6 +32,8 @@ Bu rehber kod yazildiktan veya degistirildikten sonra kontrol icin kullanilir.
 - [ ] Davranis degistiyse mevcut test guncellendi.
 - [ ] Kritik is kurallari ve hata durumlari test edildi.
 - [ ] Test yazilamadiysa nedeni final notunda aciklandi.
+- [ ] Filtreleme, form validation ve helper fonksiyonlari unit test ile korunuyor.
+- [ ] Coverage raporu gerekiyorsa Vitest coverage komutu eklenip calistiriliyor.
 
 ## UI/UX
 
@@ -56,6 +58,7 @@ Mumkun olan en yakin komutu calistir:
 ```bash
 npm run build
 npm run test
+npm run test -- --coverage
 npm run lint
 npm run typecheck
 ```
@@ -65,4 +68,12 @@ Eger proje henuz komut icermiyorsa, calistirilabilir dosya icin uygun komutu bel
 ```bash
 node dosya.js
 npx tsx dosya.ts
+```
+
+Windows PowerShell `npm.ps1` execution policy nedeniyle calismiyorsa ayni komutlar `npm.cmd` ile denenebilir:
+
+```bash
+npm.cmd run build
+npm.cmd test
+npm.cmd run hello
 ```

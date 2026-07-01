@@ -32,3 +32,13 @@ export type Project = {
   site: string
   status: 'draft' | 'survey' | 'active'
 }
+
+export type UserRole = 'admin' | 'operator' | 'viewer'
+
+export type User = {
+  id: string
+  name: string
+  role: UserRole
+  email: string
+  status: 'active' | 'inactive'
+}

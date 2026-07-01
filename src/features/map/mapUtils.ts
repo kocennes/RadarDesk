@@ -1,6 +1,11 @@
-import type { Device } from '../../types/domain'
+import type { Alert, Device } from '../../types/domain'
 
 export type LatLngTuple = [number, number]
+
+export type AlertOverlay = {
+  alert: Alert
+  position: LatLngTuple
+}
 
 export function getMapCenter(devices: Device[]): LatLngTuple {
   if (devices.length === 0) {
@@ -20,4 +25,21 @@ export function getMapCenter(devices: Device[]): LatLngTuple {
 
 export function getRangeMeters(device: Device): number {
   return device.rangeKm * 1000
+}
+
+export function getAlertOverlays(alerts: Alert[], devices: Device[]): AlertOverlay[] {
+  return alerts.flatMap((alert) => {
+    const sourceDevice = devices.find((device) => device.id === alert.sourceDeviceId)
+
+    if (!sourceDevice) {
+      return []
+    }
+
+    return [
+      {
+        alert,
+        position: [sourceDevice.latitude, sourceDevice.longitude],
+      },
+    ]
+  })
 }

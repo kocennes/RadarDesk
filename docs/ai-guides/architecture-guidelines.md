@@ -76,6 +76,28 @@ type Device = {
 - API response tipleri tanimli olmali.
 - Hata durumlari standardize edilmeli.
 
+RadarDesk icin onerilen gecis:
+
+```text
+src/mocks/* -> src/services/mockApi.ts -> backend endpointleri -> database
+```
+
+Bu geciste ekran componentleri once servis fonksiyonlarina baglanmali; servislerin ic kaynagi mock data iken daha sonra backend'e tasinabilir.
+
+Backend basladiginda ayri bir klasor tercih edilebilir:
+
+```text
+server/
+  src/
+    app.ts
+    routes/
+    middleware/
+    services/
+    types/
+```
+
+Frontend ve backend ayni repoda kalacaksa ortak domain tiplerinin tekrarini azaltmak icin ileride `shared/` klasoru degerlendirilebilir; ilk MVP'de basitlik onceliklidir.
+
 ## Buyume Kurali
 
 Bir dosya asiri uzuyorsa su sinyallere bak:
@@ -86,6 +108,14 @@ Bir dosya asiri uzuyorsa su sinyallere bak:
 - Type tanimlari component dosyasini sisiriyor mu?
 
 Bu sinyaller varsa parcala.
+
+Mevcut durumda `src/app/App.tsx` dashboard layout, form, liste, filtre ve state preview sorumluluklarini birlikte tasiyor. Yeni ozellik eklenmeden once su parcalama sirasi makuldur:
+
+- `features/dashboard` icine metrik ve state toolbar componentleri.
+- `features/projects` icine project form componenti.
+- `features/devices` icine device list/filter componenti.
+- `features/alerts` icine alert list/filter componenti.
+- `components/layout` icine shell/sidebar/topbar parcalari.
 
 ## Mimari Kontrol Listesi
 

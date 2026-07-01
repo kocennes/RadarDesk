@@ -109,6 +109,8 @@ Kurallar:
 - Render environment variables alanina backend secretlari girilir.
 - Firebase/Vercel frontend environment degiskenlerinde sadece public degerler tutulur.
 - `VITE_` ile baslayan degerlerin frontend bundle icinde gorunebilecegi unutulmaz.
+- Backend secretlari `VITE_` prefix'iyle tanimlanmaz.
+- Frontend icin gereken API base URL public kabul edilir; database URL, JWT secret veya servis token'i frontend'e verilmez.
 
 ## CORS Stratejisi
 
@@ -213,3 +215,10 @@ Resmi dokumanlara gore:
 - Firebase Spark plan no-cost plandir; Firebase Hosting statik ve SPA web app deploy icin uygundur.
 - Neon Free plan no monthly cost ile prototip/side project icin Postgres sunar; limitler vardir.
 - Vercel Hobby plan free olup kisisel projeler icin baslangic secenegidir.
+
+## Arastirma Sonrasi Deploy Notlari
+
+- Deploy oncesi platform limitleri resmi fiyat/limit sayfalarindan tekrar kontrol edilmelidir; bu dosyadaki free-tier notlari karar rehberidir, garanti veya sabit kota listesi degildir.
+- Vite frontend build'inde `VITE_` ile baslayan degerler client tarafinda gorunebilir; `.env.example` dosyasinda bunu belirten yorum kullan.
+- Render backend icin health check endpointi, startup komutu ve environment variables birlikte dokumante edilmelidir.
+- Database migration komutu eklenmeden production deploy akisi tamamlanmis sayilmamalidir.

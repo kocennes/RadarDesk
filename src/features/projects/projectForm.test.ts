@@ -31,6 +31,19 @@ describe('project form helpers', () => {
     })
   })
 
+  it('limits site names to a readable length', () => {
+    const draft: ProjectDraft = {
+      name: 'Perimeter Demo',
+      customer: 'Training Customer',
+      site: 'A'.repeat(81),
+      status: 'survey',
+    }
+
+    expect(validateProjectDraft(draft)).toEqual({
+      site: 'Site must be 80 characters or fewer.',
+    })
+  })
+
   it('accepts a valid draft', () => {
     const errors = validateProjectDraft(createProjectDraft(projects[0]))
 

@@ -58,6 +58,16 @@ Dashboard'da kullanici ayni anda cok bilgi gorecegi icin:
 - Marker renkleri tutarli olmali.
 - Menzil cemberleri acik isimlendirilmelidir.
 - Harita uzerinde alarm/tehdit gosteriliyorsa zaman bilgisi de ver.
+- Leaflet kullaniliyorsa cihaz markerlari, menzil cemberleri ve alarm/bolge gosterimleri ileride layer group/layer control mantigina ayrilabilir.
+- Gercek musteri koordinati veya saha bilgisi yerine mock koordinat kullan.
+
+## Erisilebilirlik ve Performans Notlari
+
+- Form inputlari ve select kontrolleri gorunur label veya erisilebilir ad tasimali.
+- Validation mesaji sadece renkle anlatilmamali; metin olarak da gosterilmeli.
+- Loading, error, empty ve success durumlari ekran okuyucular icin anlasilir metin icermeli.
+- Buyuk liste veya pahali hesaplama olmadikca `useMemo`/memoizasyon ekleme; once okunabilir kodu koru.
+- Veri seti buyurse filtreleme, metrik hesaplama ve harita marker uretimi `useMemo` adayi olabilir.
 
 ## CSS Kurallari
 

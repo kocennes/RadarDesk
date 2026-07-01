@@ -40,21 +40,54 @@
 ## JavaScript ve TypeScript Ogrenme
 
 - [ ] JavaScript temel konularini tekrar et.
-- [ ] TypeScript temel tiplerini calis.
-- [ ] `hello-world.ts` dosyasini temiz ders orneklerine cevir.
-- [ ] Basit degisken, fonksiyon, array ve object alistirmalari ekle.
-- [ ] Her yeni konu icin kucuk test veya calistirma kontrolu ekle.
+- [x] TypeScript temel tiplerini calis.
+- [x] `hello-world.ts` dosyasini temiz ders orneklerine cevir.
+- [x] Basit degisken, fonksiyon, array ve object alistirmalari ekle.
+- [x] Her yeni konu icin kucuk test veya calistirma kontrolu ekle.
 
 ## Backend
 
-- [ ] Backend'i UI MVP'den sonra ele al.
-- [ ] Node.js + TypeScript backend yapisini planla.
-- [ ] Express veya Fastify sec.
-- [ ] `/health` endpointi ekle.
-- [ ] Cihaz listesi icin mock API endpointi ekle.
-- [ ] Form kaydi icin API endpointi ekle.
-- [ ] Input validation ekle.
-- [ ] Hata cevap formatini standartlastir.
+- [x] Backend'i UI MVP'den sonra ele al.
+- [x] Node.js + TypeScript backend yapisini planla.
+- [x] Express veya Fastify sec.
+- [x] `/health` endpointi ekle.
+- [x] Cihaz listesi icin mock API endpointi ekle.
+- [x] Alarm listesi icin mock API endpointi ekle.
+- [x] Proje listesi icin mock API endpointi ekle.
+- [x] Form kaydi icin API endpointi ekle.
+- [x] Input validation ekle.
+- [x] Hata cevap formatini standartlastir.
+- [x] Backend klasor yapisini olustur: `server/src/app.ts`, `server/src/routes`, `server/src/middleware`, `server/src/types`.
+- [x] Backend icin TypeScript build ve dev scriptlerini ekle.
+- [x] Backend endpointlerinde sadece mock veri kullan; gercek musteri/saha/veri baglantisi yapma.
+- [x] API response modellerini frontend `Device`, `Alert`, `Project` tipleriyle uyumlu tut.
+- [x] Form kaydinda yazilabilir alanlari allowlist ile sinirla: `name`, `customer`, `site`, `status`.
+- [x] Backend icin en az `/health` ve validation testlerini ekle.
+
+## Arastirma Sonrasi Gelistirme Firsatlari
+
+- [x] `src/app/App.tsx` icindeki liste, form, metrik ve layout parcaciklarini feature componentlerine ayir.
+- [ ] Dashboard'daki turetilmis verileri buyuk veri setine gecmeden once `useMemo` adaylari olarak not et; sadece olcum veya belirgin maliyet varsa uygula.
+- [x] Form ve filtre kontrolleri icin erisilebilir ad, hata mesaji ve klavye ile kullanim kontrolu yap.
+- [x] Leaflet haritasinda cihaz markerlari, menzil cemberleri ve alarm/bolge katmanlari icin layer group/layer control taslagi hazirla.
+- [x] Mock data'dan mock API'ye gecis icin `src/services/` altinda typed data access fonksiyonlari planla.
+- [x] Vitest coverage komutu eklemeyi degerlendir: `vitest run --coverage`.
+- [x] Backend baslarken request validation, response allowlist ve merkezi error handler tasarimini birlikte ekle.
+
+## Kod Incelemesinde Gorulen Eksikler
+
+- [x] `src/mocks/users.ts` ekle; sadece mock admin/operator/viewer kullanicilari icersin.
+- [x] `User` ve `UserRole` domain tiplerini `src/types/domain.ts` icine ekle.
+- [x] Sidebar'daki `Devices`, `Projects`, `Reports` butonlari icin ya basit view state ekle ya da henuz pasif olduklarini UI'da tutarli goster.
+- [x] `src/services/mockApi.ts` fonksiyonlarini ileride gercek API'ye gecisi kolaylastiracak async servis sozlesmesine yaklastir.
+- [x] Frontend veri yukleme akisini servis katmanindan gelecek loading/error durumlarini kullanacak sekilde hazirla.
+- [x] Frontend servis katmanini `VITE_API_BASE_URL` varsa backend API'ye, yoksa mock veriye gidecek sekilde ayarla.
+- [x] `ProjectIntakeCard` submit davranisini backend gelene kadar mock servis fonksiyonuna bagla.
+- [x] Harita panelinde alert/bolge overlay taslagini mock veriyle ekle; gercek koordinat veya saha bilgisi kullanma.
+- [x] Liste satirlarinda tarih/saat formatlama icin kucuk bir `utils/formatters.ts` dosyasi ekle.
+- [ ] `App.tsx` icindeki ana layout parcaciklarini ileride `components/layout` altina ayirma adaylarini not et.
+- [x] Coverage raporunda acik kalan `dashboardViewState.ts` ve `projectForm.ts` branch'leri icin eksik test senaryolarini tamamla.
+- [x] `npm.cmd run build`, `npm.cmd test`, `npm.cmd run test:coverage` sonuclarini README veya dokumantasyon notlarina kisa olarak ekle.
 
 ## Database
 
@@ -62,7 +95,11 @@
 - [ ] Temel tablolar icin schema tasarla.
 - [ ] `projects`, `devices`, `alerts`, `users` tablolarini dusun.
 - [ ] Migration araci sec.
-- [ ] `.env.example` dosyasini ekle.
+- [x] `.env.example` dosyasini ekle.
+- [ ] Ilk schema taslaginda hassas savunma verisi, gercek koordinat ve musteri dokumani saklama.
+- [ ] Seed verisini sadece mock/demo kayitlardan olustur.
+- [ ] Database baglantisini sadece backend tarafinda kullanacak sekilde planla.
+- [ ] Migration komutlarini package scriptlerine eklemeden deploy akisini tamamlanmis sayma.
 
 ## Security
 
@@ -71,6 +108,12 @@
 - [ ] CORS stratejisini belirle.
 - [ ] Kullanici rolleri taslagini hazirla: admin, operator, viewer.
 - [ ] Auth yaklasimini sec: Firebase Auth veya backend JWT.
+- [ ] API endpointlerinde kullanicinin erisebilecegi obje ve alanlar backend tarafinda kontrol edilecek sekilde planla.
+- [x] Form kaydi icin client'tan gelen her alan kabul edilmeyecek; yazilabilir alanlar allowlist ile sinirlanacak.
+- [ ] `.gitignore` hassas yerel dosyalari disarida tutuyor mu her release oncesi kontrol et.
+- [ ] Frontend'de kullanici girdisini HTML olarak basan kod olmadigini kontrol et.
+- [ ] Backend hata cevaplarinda stack trace veya teknik detay donmemesini sagla.
+- [ ] Auth baslamadan once rol matrisi yaz: admin hangi islemleri yapar, operator ne yapar, viewer ne gorur.
 
 ## Deployment
 
@@ -78,7 +121,14 @@
 - [ ] Backend icin Render ayarlarini planla.
 - [ ] Database icin Neon connection string ortam degiskeni olarak tutulacak.
 - [ ] Production CORS domainini ayarla.
-- [ ] Build ve deploy komutlarini README'ye ekle.
+- [x] Build ve deploy komutlarini README'ye ekle.
+- [x] `.env.example` ekle; gercek secret koyma.
+- [x] `VITE_` ile baslayan frontend env degerlerinin bundle icinde gorunebilecegini README/deploy notlarinda belirt.
+- [x] Frontend icin public `VITE_API_BASE_URL` ornegini `.env.example` dosyasinda acikla.
+- [x] Backend icin `DATABASE_URL`, `CORS_ORIGIN`, auth secilirse `JWT_SECRET` orneklerini `.env.example` dosyasinda placeholder olarak belirt.
+- [x] Render health check yolunu `/health` olarak dokumante et.
+- [ ] Deploy oncesi resmi Firebase/Vercel/Render/Neon free-tier limitlerini tekrar kontrol et.
+- [ ] Production deploy icin hassas PDF, is notu ve local dokumanlarin build/deploy paketine girmedigini kontrol et.
 
 ## Dokumantasyon
 
@@ -86,3 +136,6 @@
 - [ ] `docs/project-brief.md` dosyasini MVP kararlarina gore guncelle.
 - [ ] `docs/ai-guides/*` rehberlerini yeni ihtiyaclara gore guncelle.
 - [ ] Yeni ozelliklerden sonra test ve dogrulama notlarini ekle.
+- [x] Frontend MVP tamamlanan ozellikleri ve kalan backend/database islerini README'de ayri bolumlerde listele.
+- [ ] Yeni backend baslangici icin kisa karar kaydi yaz: neden Express/Fastify secildi, hangi endpointler once gelecek.
+- [x] Mock veri kullanimi politikasini README'de netlestir: gercek musteri, saha, koordinat ve PDF verisi kullanilmaz.

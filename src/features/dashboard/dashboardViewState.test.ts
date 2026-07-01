@@ -25,6 +25,8 @@ describe('dashboard view state helpers', () => {
 
   it('returns readable labels for controls', () => {
     expect(getDashboardViewLabel('loading')).toBe('Loading demo')
+    expect(getDashboardViewLabel('empty')).toBe('Empty demo')
+    expect(getDashboardViewLabel('error')).toBe('Error demo')
     expect(getDashboardViewLabel('success')).toBe('Success demo')
   })
 })
