@@ -17,8 +17,9 @@ Bu projede kod yazarken amac sadece calisan kod uretmek degildir. Kod; guvenli, 
    - Refactor, test, kalite: `docs/ai-guides/code-quality-checklist.md`
    - Proje hedefi: `docs/project-brief.md`
 3. Rehberdeki kurallari uygulayarak kod yaz.
-4. Degisiklikleri kisaca acikla.
-5. Mumkunse test/build/lint komutlarini calistir.
+4. Davranis degistiren veya yeni ozellik ekleyen kodlarda test yaz ya da mevcut testi guncelle.
+5. Degisiklikleri kisaca acikla.
+6. Mumkunse test/build/lint komutlarini calistir.
 
 ## Yasaklar
 

@@ -26,6 +26,13 @@ Bu rehber kod yazildiktan veya degistirildikten sonra kontrol icin kullanilir.
 - [ ] Event handlerlar okunabilir.
 - [ ] Component cok buyukse alt componente ayrildi.
 
+## Tests
+
+- [ ] Yeni ozellik icin uygun test eklendi.
+- [ ] Davranis degistiyse mevcut test guncellendi.
+- [ ] Kritik is kurallari ve hata durumlari test edildi.
+- [ ] Test yazilamadiysa nedeni final notunda aciklandi.
+
 ## UI/UX
 
 - [ ] Loading, empty, error, success durumlari dusunuldu.

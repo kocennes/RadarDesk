@@ -25,6 +25,7 @@ Beklenen cikti:
 - TypeScript tipleri net.
 - UI kullanici dostu.
 - Guvenlik varsayilanlari dikkatli.
+- Davranis degistiren kodlarda uygun test yazilmis veya guncellenmis.
 - Degisikliklerden sonra test/build/lint veya uygun calistirma komutu.
 
 Eger is belirsizse once makul varsayim yap, riskliyse kullaniciya kisa bir soru sor.

@@ -16,8 +16,9 @@ Bu repo uzerinde calisan her AI ajan once bu dosyayi, sonra yapacagi isle ilgili
 3. Savunma, radar, RF, jammer, musteri veya proje dokumani gibi hassas iceriklerde yerel `docs/yeni-is-pdf-ozeti.md` dosyasi varsa gizlilik ve risk notlarini dikkate al. Bu dosya remote repo'ya push edilmez.
 4. Kullanici acikca istemedikce PDF dosyalarini, is notlarini veya hassas dokumanlari kopyalama, disari aktarma, ozetleme ya da baska klasorlere tasima.
 5. Kod yazarken kucuk, okunabilir ve geri alinabilir degisiklikler yap.
-6. Her degisiklikten sonra uygun dogrulama komutunu calistir. Ornek: TypeScript icin `npm run ...`, build/test varsa ilgili komut.
-7. Klasor disina kullanici istemeden erisme.
+6. Davranis degistiren veya yeni ozellik ekleyen kodlarda uygun test yaz veya mevcut testi guncelle.
+7. Her degisiklikten sonra uygun dogrulama komutunu calistir. Ornek: TypeScript icin `npm run ...`, build/test varsa ilgili komut.
+8. Klasor disina kullanici istemeden erisme.
 
 ## Kodlama Prensipleri
 
