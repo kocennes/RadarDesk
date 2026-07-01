@@ -1,0 +1,48 @@
+import type { Device } from '../types/domain'
+
+export const devices: Device[] = [
+  {
+    id: 'radar-001',
+    name: 'North Gate Radar',
+    type: 'radar',
+    status: 'online',
+    location: 'North perimeter',
+    latitude: 41.011,
+    longitude: 28.981,
+    rangeKm: 4,
+    lastSeen: '14:18',
+  },
+  {
+    id: 'rf-002',
+    name: 'RF Node East',
+    type: 'rf',
+    status: 'warning',
+    location: 'East tower',
+    latitude: 41.008,
+    longitude: 28.989,
+    rangeKm: 6,
+    lastSeen: '14:16',
+  },
+  {
+    id: 'eo-003',
+    name: 'EO/IR PTZ Alpha',
+    type: 'eo-ir',
+    status: 'online',
+    location: 'Command roof',
+    latitude: 41.006,
+    longitude: 28.976,
+    rangeKm: 3,
+    lastSeen: '14:19',
+  },
+  {
+    id: 'c2-004',
+    name: 'C2 Workstation',
+    type: 'c2',
+    status: 'offline',
+    location: 'Control room',
+    latitude: 41.004,
+    longitude: 28.972,
+    rangeKm: 1,
+    lastSeen: '13:52',
+  },
+]

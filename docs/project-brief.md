@@ -20,17 +20,37 @@ Proje ileride "operasyonel dashboard" mantigina tasinabilir:
 
 Bu uygulama gercek hassas sistemlere baglanmadan once sahte/mock veriyle gelistirilmelidir.
 
-## Ogrenme Sirasi
+## 8 Adimli Gelistirme Plani
 
-1. JavaScript temelleri.
-2. TypeScript temelleri.
-3. HTML/CSS temelleri.
-4. React component, props, state, event.
-5. Form, tablo, kart ve dashboard UI.
-6. API'den veri cekme.
-7. Backend temelleri.
-8. Database temelleri.
-9. Deployment.
+1. JavaScript ve TypeScript temelleri.
+2. Vite + React + TypeScript frontend iskeleti.
+3. Fluent UI ile temel componentler: Button, Input, Card, Table, Dialog.
+4. Mock database dosyalari: `devices`, `alerts`, `projects`, `users`.
+5. RadarDesk Dashboard MVP: cihaz listesi, alarm listesi, ozet kartlari, proje/musteri formu.
+6. Harita ekrani: mock koordinatlar, markerlar, menzil cemberleri ve bolge gosterimi.
+7. Backend + mock API: Node.js + TypeScript ile `/api/devices`, `/api/alerts`, `/api/projects`.
+8. Gercek database: Neon Postgres ile kalici veri, migration ve deploy.
+
+## Veri Gecis Stratejisi
+
+Proje baslangicta gercek hassas veriye baglanmayacak. Veri kaynagi asama asama degisecek:
+
+```text
+Mock data -> Mock API -> Gercek API -> Neon Postgres
+```
+
+Bu sayede once arayuz, veri modeli ve kullanici akisi netlesir. Daha sonra ayni ekranlar bozulmadan backend ve database'e baglanir.
+
+Mock veri ornek klasorleri:
+
+```text
+src/mocks/devices.ts
+src/mocks/alerts.ts
+src/mocks/projects.ts
+src/mocks/users.ts
+```
+
+Gercek database'e gecilene kadar musteri, saha, koordinat, savunma sistemi veya PDF kaynakli hassas veriler kullanilmaz.
 
 ## Hassasiyet
 

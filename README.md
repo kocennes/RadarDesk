@@ -15,8 +15,23 @@ The long-term goal is to practice:
 ## Current Scripts
 
 ```bash
+npm run dev
+npm run build
+npm test
 npm run hello
 ```
+
+## UI-First MVP
+
+The first RadarDesk screen is a React + TypeScript dashboard powered by mock data:
+
+- Summary cards
+- Device status list
+- Device search and status filtering
+- Alert list
+- Alert severity filtering
+- Project intake form shell
+- Lazy-loaded Leaflet operation map with mock markers and range rings
 
 ## Project Guides
 
