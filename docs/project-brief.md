@@ -154,6 +154,16 @@ Baslangic false alarm kurali:
 - `multi-sensor`: Ayni zaman/proje penceresinde iki veya daha fazla sensor tipi olayi destekler; daha yuksek guvenle incelemeye duser.
 - `operator-confirmed`: Operator kanitlari inceleyip olayi dogrular; sistem artik bunu operator onayli incident olarak gosterir.
 
+### Canli Event Yayini, Threat Score ve Focus Mode Karari
+
+Backend ingest akisi ilk asamada HTTP POST ile kalabilir. Frontend'in yeni sensor event, incident ve review status degisikliklerini anlik gormesi gerektiginde WebSocket veya SSE eklenmelidir. MVP icin ilk karar notu SSE lehine olabilir; cunku RadarDesk'te ilk ihtiyac backend'den frontend'e tek yonlu alarm/event akisi yayinlamaktir. WebSocket, operator komutu veya cift yonlu canli kontrol gerektiginde tekrar degerlendirilmelidir.
+
+Incident correlation sonraki asamada yalnizca zaman penceresine bakmakla kalmamalidir. Ayni proje/saha, cihaz tipi uyumu, radar track id, RF frekansi, kamera dogrulama evidence'i, zone ihlali ve operator review bilgisi birlikte degerlendirilmelidir. Ayni track veya ayni RF/radar eslesmesi tekrar geldiginde yeni incident acmak yerine mevcut incident guncellenmelidir.
+
+Threat score motoru ayri bir karar katmani olarak tasarlanmalidir. Skor; severity, confidence, sensor cesitliligi, hedefin yaklasma yonu, menzil, zone ihlali, evidence sayisi ve operator onayindan 0-100 arasi sonuc uretmelidir. Bu skor alarm feed, incident karti, harita sonar vurgusu ve PPI radar panelinde tutarli sekilde kullanilmalidir.
+
+Target-centric focus mode, operatorun tek hedef veya incident uzerine odaklanmasini saglamalidir. Secili hedef/incident baglami harita, PPI, alarm feed, kamera/evidence ve incident panellerine yayilmali; ilk surumde resizable grid gerekmeden mevcut sabit paneller uzerinde vurgulama veya filtreleme ile uygulanmalidir.
+
 ## Lokal Sensor Event Akisi
 
 Gercek cihaz verisi frontend'e ham olarak verilmemelidir. Backend kamera, radar, RF ve C2 kaynaklarindan gelen veriyi once typed sensor event modeline normalize etmelidir.
@@ -171,6 +181,34 @@ Frontend bu olaylari alarm/kanit panelinde gosterir; ham stream, RTSP URL, RF ha
 Gercek cihaz sahaya baglanmadan once frontend'de yalnizca lokal test amacli bir olay uretme kontrolu olabilir. Bu kontrol kamera/radar/RF icin backend ingest endpointine ornek event gonderir; kamera event'lerinde snapshot kaniti backend tarafindan otomatik uretilir, radar ve RF event'lerinde ise track/sinyal metadata'si kaydedilir. Bu akis manuel snapshot alma yerine gercek veri gelmis gibi backend pipeline'ini denemek icindir.
 
 Radar/RF olaylarinda ekran goruntusu aranmaz; kanit kaydi, gelen track/sinyal verisinin backend tarafinda normalize edilip lokal JSON olarak saklanmasidir. Frontend sadece bu `dataPath` referansini gosterir.
+
+### Ileri Radar Track Metadata ve Harita Gosterimi
+
+Radar event modeli genisledikten sonra `radar-track` metadata'si hedef yonu ve hareket niyetini gosterecek sekilde zenginlestirilmelidir. Ilk uyumlu alanlar opsiyonel olmali ve eski mock/backend event'lerini kirmamalidir:
+
+- `rangeMeters`
+- `azimuthDegrees`
+- `speedMps`
+- `altitudeMeters`
+- `headingDegrees`
+
+Harita tarafinda bu alanlar geldikce hedef sadece nokta olarak gosterilmemelidir. `headingDegrees` veya uyumlu hareket bilgisi varsa hedefin gidis yonu kucuk ok/vektor ile gosterilmeli, `altitudeMeters` varsa marker veya HUD tooltip yaninda `ALT: 120m` gibi kisa etiket kullanilmalidir. Hedef yaklasma yonundeyse renk veya uyari seviyesi belirginlestirilmelidir.
+
+Bu iyilestirme CesiumJS'e gecmeden once 2D Leaflet haritasinda uygulanabilir kalmalidir; gercek musteri koordinati veya hassas saha bilgisi kullanilmadan mock/lokal radar event verisiyle gelistirilmelidir.
+
+### Radar UI, PTZ Odak ve Protokol Entegrasyonu Karari
+
+PPI radar ekrani RadarDesk'in operasyon hissini guclendiren bir ana paneldir. Ilk surum Canvas tabanli mock sweep ve fading etkisiyle calisir durumda kalmali; gercek radar verisi geldiginde DOM marker uretmek yerine Canvas cizim modeli beslenmelidir. Radar hedefleri `targetId`, `rangeMeters`, `azimuthDegrees`, `speedMps`, `altitudeMeters`, `headingDegrees`, `severity` ve `confidence` gibi opsiyonel metadata alanlariyla PPI ve haritada ortak sozlesme uzerinden gosterilmelidir.
+
+Click-to-track davranisi ilk asamada UI odak modu olarak ele alinmalidir: operator harita veya PPI hedefini sectiginde secili hedef/incident baglami kamera/evidence, alarm feed, incident ve harita panellerine yayilir. Gercek PTZ kamera komutu daha sonra backend tarafinda ayrica tasarlanmalidir; frontend kameraya dogrudan ONVIF, RTSP veya credential bilgisiyle baglanmaz.
+
+PTZ yonlendirme eklendiginde backend, hedef ile kamera konumu arasindaki bearing/mesafe/tilt hesaplamasini kontrollu bir command endpointi arkasinda yapmalidir. Bu endpoint sadece izinli cihazlara komut gondermeli, rate limit ve audit log tutmali, credential veya vendor protokol detayini frontend'e dondurmemelidir. Ilk denemelerde gercek musteri koordinati yerine mock/default koordinat ve test adapter kullanilmalidir.
+
+Canli radar/RF/kamera olay yogunlugu arttiginda frontend ana thread'i ham event islememelidir. Web Worker karari, WebSocket/SSE dinleme, koordinat donusumu, basit filtreleme ve render modeli hazirlama islerini arka planda yapacak sekilde degerlendirilmelidir. UI thread'e sadece cizilecek hedefler, incident ozeti ve kisa panel state'i gonderilmelidir.
+
+Gercek radar entegrasyonunda ICD dokumani ve protokol sozlesmesi gelmeden ham parser yazilmamalidir. ASTERIX Cat 010/040 veya vendor ham byte formatlari gerekiyorsa bu is backend sinirinda ayri parser/adapter katmaninda kalmali; sistemin geri kalani ham byte/hex yerine normalize `SensorEvent` ve `Incident` modelleriyle calismalidir.
+
+Mock veri stratejisi korunur: mevcut TypeScript mock streamer HTTP ingest ile backend pipeline'ini test eder. Ileride gerekirse Python veya Node tabanli protokol uyumlu simulator eklenebilir; ancak bu simulator da gercek musteri/saha koordinati, gizli protokol dokumani veya credential icermemelidir.
 
 ## Lokal Kamera Snapshot Kaniti
 

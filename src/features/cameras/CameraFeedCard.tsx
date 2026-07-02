@@ -44,6 +44,11 @@ export function CameraFeedCard({ cameraFeeds }: CameraFeedCardProps) {
                 <Text block className="muted" size={200}>
                   Kanit kaydi olay olusunca backend tarafinda otomatik alinir.
                 </Text>
+                <div className="hud-chip-row">
+                  <span className="hud-chip">MODE: {cameraFeed.mode.toUpperCase()}</span>
+                  <span className="hud-chip">STATUS: {cameraFeed.status.toUpperCase()}</span>
+                  <span className="hud-chip">SRC: {cameraFeed.source.toUpperCase()}</span>
+                </div>
               </div>
               <Badge appearance="filled" color={statusColor[cameraFeed.status]}>
                 {statusLabel[cameraFeed.status]}

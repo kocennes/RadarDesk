@@ -107,7 +107,7 @@ export function DeviceList({
         <ListState message="Bu filtrelere uyan cihaz yok" />
       ) : (
         devices.map((device) => (
-          <div className="device-row" key={device.id}>
+          <div className={`device-row device-status-${device.status}`} key={device.id}>
             <div>
               <Text weight="semibold">{device.name}</Text>
               <Text className="muted" size={200}>
@@ -116,6 +116,11 @@ export function DeviceList({
               <Text block className="muted" size={200}>
                 {profileLabel[device.profile]} / {ingestModeLabel[device.ingestMode]} / {formatCapabilities(device.capabilities)}
               </Text>
+              <div className="hud-chip-row">
+                <span className="hud-chip">RNG: {device.rangeKm * 1000}m</span>
+                <span className="hud-chip">TYPE: {device.type.toUpperCase()}</span>
+                <span className="hud-chip">STATUS: {device.status.toUpperCase()}</span>
+              </div>
             </div>
             <div className="device-row-actions">
               <Tooltip content={getDeviceStatusDescription(device)} relationship="description">

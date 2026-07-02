@@ -3,6 +3,7 @@ import {
   getAccessScopedDashboardData,
   getEffectiveAccess,
 } from '../../../src/services/accessControl'
+import { createCameraFeedForRegisteredDevice } from '../../../src/features/cameras/cameraFeedRegistration'
 import { registerDiscoveredDevice } from '../../../src/features/devices/deviceRegistration'
 import { buildIncidentsFromSensorEvents } from '../../../src/features/incidents/incidentCorrelation'
 import type { Alert, CameraFeed, Device, DiscoveredDevice, EffectiveAccess, Incident, Project, SensorEvent } from '../../../src/types/domain'
@@ -46,9 +47,15 @@ export function getCameraFeeds(userId = defaultMockUserId): CameraFeed[] {
 
   const allowedProjectIds = new Set(effectiveAccess.projectIds)
   const allowedDeviceIds = new Set(getDevices(userId).map((device) => device.id))
-
-  return getConfiguredCameraFeeds()
+  const configuredFeeds = getConfiguredCameraFeeds()
     .filter((cameraFeed) => allowedProjectIds.has(cameraFeed.projectId) && allowedDeviceIds.has(cameraFeed.deviceId))
+  const configuredFeedDeviceIds = new Set(configuredFeeds.map((cameraFeed) => cameraFeed.deviceId))
+  const registeredCameraFeeds = getDevices(userId)
+    .filter((device) => device.type === 'eo-ir' && !configuredFeedDeviceIds.has(device.id))
+    .map((device) => createCameraFeedForRegisteredDevice(device))
+    .filter((cameraFeed): cameraFeed is CameraFeed => cameraFeed !== null)
+
+  return [...configuredFeeds, ...registeredCameraFeeds]
     .map((cameraFeed) => ({ ...cameraFeed }))
 }
 

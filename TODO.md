@@ -37,6 +37,41 @@
 - [x] False alarm azaltma hedefi icin sensor fusion karar notu yaz: tek sensor alarmi, coklu sensor dogrulamasi ve operator onayi farkli severity/guven seviyeleri uretsin.
 - [ ] Gercek urun arastirmasinda gecen cloud/on-prem seceneklerini deployment kararlarina bagla; varsayilan lokal/on-prem, bulut opsiyonel kalsin.
 
+## Sonraki Asama: Canli Event, Threat Score ve Operator Odak Modu
+
+- [ ] Backend canli event yayini icin WebSocket/SSE karar notu yaz; ilk tercih SSE olabilir, cunku backend'den frontend'e tek yonlu sensor event/incident bildirimi MVP icin yeterlidir.
+- [ ] Canli event yayini tasariminda HTTP ingest sozlesmesini koru; WebSocket/SSE sadece UI'in yeni event, incident ve review degisikliklerini anlik almasi icin kullanilsin.
+- [ ] Incident correlation kurallarini gelistir: ayni proje/saha, yakin zaman penceresi, cihaz tipi uyumu, radar track id, RF frekansi ve kamera dogrulama kaniti birlikte degerlendirilsin.
+- [ ] Duplicate incident azaltma ekle; ayni track veya ayni RF/radar eslesmesi tekrar geldiginde yeni olay dosyasi acmak yerine mevcut incident guncellensin.
+- [ ] Threat score motoru tasarla: severity, confidence, sensor cesitliligi, yaklasma yonu, menzil, zone ihlali, operator onayi ve evidence sayisindan 0-100 arasi skor uret.
+- [ ] Threat score sonucunu alarm feed, incident karti, harita sonar ve PPI panelinde tutarli goster.
+- [ ] Target-centric focus mode ekle: operator bir hedef/incident sectiginde harita, PPI, alarm feed, kamera/evidence ve incident paneli ayni hedef baglamina odaklansin.
+- [ ] Focus mode ilk surumde resizable panel gerektirmesin; secili target id/incident id state'i ile mevcut sabit paneller filtrelensin veya vurgulansin.
+
+## Radar UI ve Gercek Cihaz Entegrasyon Taktikleri
+
+- [x] Web tabanli PPI radar ekraninin mock Canvas versiyonunu ekle; requestAnimationFrame sweep animasyonu ve fading etkisiyle DOM yerine Canvas cizimi kullan.
+- [x] TypeScript mock radar/RF event streamer ekle; gercek donanim olmadan backend ingest ve frontend panelleri kontrollu senaryolarla test edilebilsin.
+- [ ] PPI panelini gercek radar track event sozlesmesine bagla; target id, range, azimuth, severity ve confidence alanlariyla mock cizimden canli cizime gec.
+- [ ] Click-to-track altyapisini tasarla: harita veya PPI hedefine tiklaninca secili target/incident state'i olussun ve kamera/evidence paneli ayni hedefe odaklansin.
+- [ ] PTZ kamera yonlendirme komutu frontend'den direkt gonderilmesin; backend tarafinda allowlist cihaz, yetki, rate limit ve audit log ile kontrollu command endpointi tasarlansin.
+- [ ] Kamera pan/tilt hesaplamasi icin hedef konumu ile kamera konumu arasinda bearing/mesafe donusum katmani ekle; ilk versiyonda mock koordinat ve test PTZ adapter kullan.
+- [ ] Gercek PTZ/ONVIF entegrasyonu icin credential, RTSP URL ve vendor protokol detaylari sadece backend config/env tarafinda kalsin; frontend'e command sonucu ve guvenli metadata donsun.
+- [ ] Canli event yukunde tarayiciyi rahatlatmak icin Web Worker karari yaz; WebSocket/SSE dinleme, koordinat donusumu ve filtreleme worker icinde yapilip UI'a sade cizim modeli gonderilsin.
+- [ ] Worker kullanildiginda ana thread'e sadece goruntulenecek hedef listesi, incident ozeti ve render komutlari aktarilsin; ham radar/RF/kamera payload'i UI state'ine alinmasin.
+- [ ] Protokol uyumlu mock server/simulator yol haritasi ekle; TypeScript streamer korunurken ileride Python veya Node ile UDP/WebSocket/JSON formatlarini taklit eden ayri simulator eklenebilsin.
+- [ ] Gercek radar ICD dokumani geldikten sonra ham protokol parser katmani tasarla; ASTERIX Cat 010/040 veya vendor ham byte formatlari backend sinirinda normalize SensorEvent JSON'una cevrilsin.
+- [ ] Ham protokol parser sonucunda kodun geri kalani ham byte/hex gormesin; sadece typed `SensorEvent` ve `Incident` sozlesmeleriyle calissin.
+- [ ] Ilk hafta entegrasyon yol haritasini uygula: ICD isteme, simulatoru calistirma, canli event hattini kurma, mock hedefleri haritada/PPI'da oynatma, kontrollu kamera snapshot/WebRTC denemesi.
+
+## Ileri Harita ve Radar Track Gelistirmeleri
+
+- [ ] Radar event metadata sozlesmesini genislet: `rangeMeters`, `azimuthDegrees`, `speedMps`, `altitudeMeters`, `headingDegrees` alanlari opsiyonel olarak desteklensin.
+- [ ] Haritada radar hedefinin gidis yonunu kucuk ok veya vektor ile goster; hedef sadece nokta olarak kalmasin.
+- [ ] Radar metadata icinde `altitudeMeters` varsa marker veya HUD tooltip yaninda `ALT: 120m` gibi kisa etiket goster.
+- [ ] Hedef yaklasma yonundeyse renk, severity veya uyari seviyesi belirginlessin; bu kural radar metadata genisledikten sonra eklenmeli.
+- [ ] Bu 2D harita iyilestirmeleri CesiumJS'e gecmeden once Leaflet uzerinde uygulanabilir kalmali.
+
 ## En Oncelikli: Musteri/Paket/Yetki Modeli
 
 - [ ] Login sonrasi kullanicinin `customer`, `project/site`, `role`, `access group` ve paket yetkisini backend tarafinda hesaplayan modeli tasarla.

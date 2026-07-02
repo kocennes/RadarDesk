@@ -1,4 +1,4 @@
-import { Badge, Text, Title2 } from '@fluentui/react-components'
+import { Badge, Switch, Text, Title2 } from '@fluentui/react-components'
 import type { Project } from '../../types/domain'
 import type { DashboardViewMode } from '../../features/dashboard/dashboardViewState'
 import { getDashboardViewLabel } from '../../features/dashboard/dashboardViewState'
@@ -6,9 +6,11 @@ import { getDashboardViewLabel } from '../../features/dashboard/dashboardViewSta
 interface TopbarProps {
   currentProject: Project | undefined
   effectiveViewMode: DashboardViewMode
+  isTacticalDark: boolean
+  onThemeModeChange: (isTacticalDark: boolean) => void
 }
 
-export function Topbar({ currentProject, effectiveViewMode }: TopbarProps) {
+export function Topbar({ currentProject, effectiveViewMode, isTacticalDark, onThemeModeChange }: TopbarProps) {
   return (
     <header className="topbar">
       <div>
@@ -18,6 +20,11 @@ export function Topbar({ currentProject, effectiveViewMode }: TopbarProps) {
         </Text>
       </div>
       <div className="topbar-actions">
+        <Switch
+          checked={isTacticalDark}
+          label="Tactical Dark"
+          onChange={(_, data) => onThemeModeChange(data.checked)}
+        />
         <Badge appearance="filled" color="brand">
           {getDashboardViewLabel(effectiveViewMode)}
         </Badge>

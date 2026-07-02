@@ -43,16 +43,11 @@ export function SensorEventList({ events }: SensorEventListProps) {
                 <Text block className="muted" size={200}>
                   {event.deviceId} / {formatDisplayTime(event.detectedAt)}
                 </Text>
-                {event.evidence?.snapshotPath ? (
-                  <Text block className="muted" size={200}>
-                    Kanit: {event.evidence.snapshotPath}
-                  </Text>
-                ) : null}
-                {event.evidence?.dataPath ? (
-                  <Text block className="muted" size={200}>
-                    Veri kaydi: {event.evidence.dataPath}
-                  </Text>
-                ) : null}
+                <div className="hud-chip-row">
+                  <span className="hud-chip">SRC: {event.deviceId}</span>
+                  {getEventRangeLabel(event) ? <span className="hud-chip">RNG: {getEventRangeLabel(event)}</span> : null}
+                  <span className="hud-chip">EV: {event.evidence ? 'YES' : 'NO'}</span>
+                </div>
               </div>
               <Badge color={severityColor[event.severity]}>{event.severity}</Badge>
             </article>
@@ -61,4 +56,10 @@ export function SensorEventList({ events }: SensorEventListProps) {
       </div>
     </Card>
   )
+}
+
+function getEventRangeLabel(event: SensorEvent): string {
+  const rangeM = event.metadata.rangeM
+
+  return typeof rangeM === 'number' ? `${rangeM}m` : ''
 }

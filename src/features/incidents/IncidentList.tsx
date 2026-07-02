@@ -79,7 +79,10 @@ export function IncidentList({ incidents, onReviewIncident }: IncidentListProps)
               const isPending = pendingIncidentId === incident.id
 
               return (
-                <article className="incident-row" key={incident.id}>
+                <article
+                  className={`incident-row incident-severity-${incident.severity} incident-status-${incident.status}`}
+                  key={incident.id}
+                >
                   <div className="incident-content">
                     <div className="incident-summary">
                       <div>
@@ -92,6 +95,11 @@ export function IncidentList({ incidents, onReviewIncident }: IncidentListProps)
                           Guven: %{Math.round(incident.confidence * 100)} / {confirmationLabel[incident.confirmationLevel]} / Kanit:{' '}
                           {incident.evidenceRefs.length}
                         </Text>
+                        <div className="hud-chip-row">
+                          <span className="hud-chip">CONF: {Math.round(incident.confidence * 100)}%</span>
+                          <span className="hud-chip">STATUS: {incident.status.toUpperCase()}</span>
+                          <span className="hud-chip">EV: {incident.evidenceRefs.length}</span>
+                        </div>
                       </div>
                       <div className="incident-badges">
                         <Badge color={severityColor[incident.severity]}>{incident.severity}</Badge>

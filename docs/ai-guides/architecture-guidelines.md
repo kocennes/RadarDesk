@@ -201,6 +201,35 @@ Frontend ve backend ayni repoda kalacaksa ortak domain tiplerinin tekrarini azal
 
 Auth ve paket bazli yetki eklendiginde API response'lari kullanicinin effective access sonucuna gore filtrelenmelidir. Frontend sadece gelen modulleri render etmeli; yetkisiz cihaz tiplerini client tarafinda saklamak tek basina yeterli kabul edilmemelidir.
 
+## Canli Sensor, Parser ve Komut Katmani
+
+Radar/RF/kamera entegrasyonu buyudukce ham cihaz protokolleri backend sinirinda adapter/parser katmaninda tutulmalidir. Frontend ASTERIX byte dizisi, vendor radar paketi, RTSP URL, ONVIF credential veya RF ham kaydi gormemelidir.
+
+Onerilen ayrim:
+
+```text
+Device Adapter / Parser
+  -> ham cihaz verisini okur
+  -> ICD veya vendor sozlesmesine gore normalize eder
+
+Sensor Event Service
+  -> typed SensorEvent uretir
+  -> lokal evidence metadata'si ekler
+
+Incident Correlation Service
+  -> SensorEvent kayitlarini incident adaylarina baglar
+
+Realtime Delivery
+  -> SSE/WebSocket ile frontend'e sadece normalize event/incident ozeti yayinlar
+
+Frontend Render State
+  -> harita, PPI, alarm feed ve camera/evidence panellerini besler
+```
+
+Canli veri yogunlugu arttiginda frontend tarafinda Web Worker degerlendirilmelidir. Worker, canli event dinleme, koordinat donusumu ve filtreleme gibi isleri yapabilir; UI thread'e yalnizca cizilecek hedefler ve panel ozeti gonderilmelidir.
+
+PTZ veya cihaz komutu gibi hareketli cihaz kontrolu frontend'den direkt protokol komutu olarak cikmamalidir. Komutlar backend'de allowlist, role/yetki kontrolu, rate limit, audit log ve test adapter destegiyle ayrica tasarlanmalidir.
+
 ## Buyume Kurali
 
 Bir dosya asiri uzuyorsa su sinyallere bak:

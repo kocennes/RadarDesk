@@ -2,7 +2,7 @@ import { Badge, Text } from '@fluentui/react-components'
 
 export function Sidebar() {
   return (
-    <aside className="sidebar" aria-label="Cihaz kurulum bilgisi">
+    <div className="sidebar" aria-label="Cihaz kurulum bilgisi">
       <div>
         <Text size={600} weight="semibold">
           RadarDesk
@@ -20,6 +20,6 @@ export function Sidebar() {
           Elindeki kamera, radar, RF veya diger cihazi bul, sec ve kendi verdigin adla kaydet.
         </Text>
       </div>
-    </aside>
+    </div>
   )
 }

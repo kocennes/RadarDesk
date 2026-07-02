@@ -10,6 +10,7 @@
     "server:dev": "tsx server/src/index.ts",
     "server:typecheck": "tsc -p tsconfig.server.json",
     "server": "tsx server/src/index.ts",
+    "stream:mock": "tsx scripts/mockSensorStreamer.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "hello": "tsx hello-world.ts"

@@ -1,6 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { Spinner, Text } from '@fluentui/react-components'
-import type { Alert, Device } from '../../types/domain'
+import type { Alert, Device, Incident } from '../../types/domain'
 import type { DashboardViewMode } from '../dashboard/dashboardViewState'
 
 const OperationsMap = lazy(() =>
@@ -12,10 +12,11 @@ const OperationsMap = lazy(() =>
 export type MapPanelContentProps = {
   alerts: Alert[]
   devices: Device[]
+  incidents: Incident[]
   viewMode: DashboardViewMode
 }
 
-export function MapPanelContent({ alerts, devices, viewMode }: MapPanelContentProps) {
+export function MapPanelContent({ alerts, devices, incidents, viewMode }: MapPanelContentProps) {
   if (viewMode === 'loading') {
     return (
       <div aria-live="polite" className="map-surface state-surface" role="status">
@@ -55,7 +56,7 @@ export function MapPanelContent({ alerts, devices, viewMode }: MapPanelContentPr
           </div>
         }
       >
-        <OperationsMap alerts={alerts} devices={devices} />
+        <OperationsMap alerts={alerts} devices={devices} incidents={incidents} />
       </Suspense>
     </div>
   )

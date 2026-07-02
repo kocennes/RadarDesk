@@ -18,6 +18,7 @@
   },
   "include": [
     "server/src",
+    "src/features/cameras/cameraFeedRegistration.ts",
     "src/features/devices/deviceRegistration.ts",
     "src/features/incidents/incidentCorrelation.ts",
     "src/mocks",

@@ -10,7 +10,7 @@ type SensorEventTesterProps = {
   onEventCreated: (event: SensorEvent) => void
 }
 
-type TestEventKey = 'thermal' | 'radar' | 'rf'
+type TestEventKey = 'thermal' | 'radar' | 'rf' | 'c2'
 
 type TestEventOption = {
   key: TestEventKey
@@ -31,6 +31,7 @@ export function SensorEventTester({
   const cameraFeed = cameraFeeds.find((candidate) => candidate.status !== 'offline')
   const radarDevice = devices.find((candidate) => candidate.type === 'radar')
   const rfDevice = devices.find((candidate) => candidate.type === 'rf')
+  const c2Device = devices.find((candidate) => candidate.type === 'c2')
 
   const options: TestEventOption[] = [
     {
@@ -85,6 +86,23 @@ export function SensorEventTester({
               signalDbm: -55,
             },
             severity: 'medium',
+          }
+        : undefined,
+    },
+    {
+      key: 'c2',
+      label: 'C2 test',
+      description: c2Device ? `${c2Device.name} icin cihaz durum metadata` : 'Uygun C2 cihazi yok',
+      input: c2Device
+        ? {
+            deviceId: c2Device.id,
+            kind: 'device-state',
+            metadata: {
+              commandState: 'ready',
+              linkedDevices: devices.filter((device) => device.status !== 'offline').length,
+              source: 'frontend-test-control',
+            },
+            severity: 'low',
           }
         : undefined,
     },

@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
-import { Card, CardHeader, FluentProvider, Text, webLightTheme } from '@fluentui/react-components'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { Card, CardHeader, FluentProvider, Text, webDarkTheme, webLightTheme } from '@fluentui/react-components'
 import { Sidebar } from '../components/layout/Sidebar'
 import { Topbar } from '../components/layout/Topbar'
 import { ListState } from '../components/ui/ListState'
+import { AlarmFeedCard } from '../features/alerts/AlarmFeedCard'
 import { AlertList } from '../features/alerts/AlertList'
 import { filterAlerts, type AlertSeverityFilter } from '../features/alerts/alertFilters'
 import { CameraFeedCard } from '../features/cameras/CameraFeedCard'
+import { createCameraFeedForRegisteredDevice } from '../features/cameras/cameraFeedRegistration'
 import { getDashboardStats } from '../features/dashboard/dashboardMetrics'
 import { getDashboardViewData, type DashboardViewMode } from '../features/dashboard/dashboardViewState'
 import { MetricCard } from '../features/dashboard/MetricCard'
@@ -20,6 +22,7 @@ import { buildIncidentsFromSensorEvents } from '../features/incidents/incidentCo
 import { IncidentList } from '../features/incidents/IncidentList'
 import { MapPanelContent } from '../features/map/MapPanelContent'
 import { ProjectIntakeCard } from '../features/projects/ProjectIntakeCard'
+import { RadarPpiPanel } from '../features/radar/RadarPpiPanel'
 import {
   deleteDevice,
   disconnectDevice,
@@ -53,15 +56,22 @@ const emptyDashboardData: MockDashboardData = {
 }
 
 type DashboardLoadState = 'loading' | 'success' | 'error'
+type DashboardThemeMode = 'light' | 'tactical-dark'
+type ResizablePanelKey = 'deviceList' | 'setup'
 
 export function App() {
   const [dashboardData, setDashboardData] = useState<MockDashboardData>(emptyDashboardData)
   const [dashboardLoadState, setDashboardLoadState] = useState<DashboardLoadState>('loading')
+  const [themeMode, setThemeMode] = useState<DashboardThemeMode>('tactical-dark')
   const [viewMode, setViewMode] = useState<DashboardViewMode>('success')
   const [deviceSearchTerm, setDeviceSearchTerm] = useState<string>('')
   const [deviceStatusFilter, setDeviceStatusFilter] = useState<DeviceStatusFilter>('all')
   const [alertSeverityFilter, setAlertSeverityFilter] = useState<AlertSeverityFilter>('all')
   const [actionDeviceId, setActionDeviceId] = useState<string>()
+  const [leftPanelHeights, setLeftPanelHeights] = useState<Record<ResizablePanelKey, number>>({
+    deviceList: 360,
+    setup: 420,
+  })
 
   useEffect(() => {
     let isCurrent = true
@@ -150,12 +160,81 @@ export function App() {
   }
 
   return (
-    <FluentProvider theme={webLightTheme}>
-      <main className="app-shell">
-        <Sidebar />
+    <FluentProvider theme={themeMode === 'tactical-dark' ? webDarkTheme : webLightTheme}>
+      <main className="app-shell" data-theme={themeMode}>
+        <aside className="left-panel" aria-label="Cihaz kurulumu ve kisa menu">
+          <Sidebar />
+
+          <ResizablePanel
+            height={leftPanelHeights.setup}
+            label="Cihaz kurulum panelini boyutlandir"
+            onHeightChange={(height) => setLeftPanelHeights((current) => ({ ...current, setup: height }))}
+          >
+            {currentProject && moduleVisibility.canUseDeviceSetup ? (
+              <DeviceDiscoveryCard
+                discoveredDevices={dashboardData.discoveredDevices}
+                onRegisterDevice={(input) =>
+                  registerDeviceFromDiscovery({
+                    ...input,
+                    discoveredDevices: dashboardData.discoveredDevices,
+                    project: currentProject,
+                  })
+                }
+                onDeviceRegistered={(device) =>
+                  setDashboardData((currentData) => ({
+                    ...currentData,
+                    cameraFeeds: upsertRegisteredCameraFeed(currentData.cameraFeeds, device),
+                    devices: currentData.devices.some((candidate) => candidate.id === device.id)
+                      ? currentData.devices.map((candidate) => (candidate.id === device.id ? device : candidate))
+                      : [...currentData.devices, device],
+                  }))
+                }
+              />
+            ) : (
+              <Card className="project-card">
+                <CardHeader
+                  header={<Text weight="semibold">Cihaz kurulumu</Text>}
+                  description={<Text size={200}>Kurulum baglami yukleniyor</Text>}
+                />
+                <ListState
+                  message={dashboardLoadState === 'error' ? 'Cihaz kurulum bilgisi yuklenemedi' : 'Cihazlar taraniyor'}
+                  tone={dashboardLoadState === 'error' ? 'error' : 'default'}
+                />
+              </Card>
+            )}
+          </ResizablePanel>
+
+          {moduleVisibility.canViewDevices ? (
+            <ResizablePanel
+              height={leftPanelHeights.deviceList}
+              label="Cihaz listesi panelini boyutlandir"
+              onHeightChange={(height) => setLeftPanelHeights((current) => ({ ...current, deviceList: height }))}
+            >
+              <Card>
+                <CardHeader header={<Text weight="semibold">Cihazlar</Text>} />
+                <DeviceList
+                  devices={filteredDevices}
+                  actionDeviceId={actionDeviceId}
+                  searchTerm={deviceSearchTerm}
+                  statusFilter={deviceStatusFilter}
+                  viewMode={effectiveViewMode}
+                  onDeleteDevice={(device) => void handleDeleteDevice(device)}
+                  onDisconnectDevice={(device) => void handleDisconnectDevice(device)}
+                  onSearchTermChange={setDeviceSearchTerm}
+                  onStatusFilterChange={setDeviceStatusFilter}
+                />
+              </Card>
+            </ResizablePanel>
+          ) : null}
+        </aside>
 
         <section className="content">
-          <Topbar currentProject={currentProject} effectiveViewMode={effectiveViewMode} />
+          <Topbar
+            currentProject={currentProject}
+            effectiveViewMode={effectiveViewMode}
+            isTacticalDark={themeMode === 'tactical-dark'}
+            onThemeModeChange={(isTacticalDark) => setThemeMode(isTacticalDark ? 'tactical-dark' : 'light')}
+          />
           <StateToolbar viewMode={viewMode} onViewModeChange={setViewMode} />
 
           <section className="metric-grid" aria-label="Dashboard ozeti">
@@ -166,80 +245,69 @@ export function App() {
           </section>
 
           <section className="workspace">
-            {moduleVisibility.canViewMap ? (
-              <Card className="map-panel">
-                <CardHeader
-                  header={<Text weight="semibold">Kayitli cihaz alani</Text>}
-                  description={<Text size={200}>Kaydettigin cihazlar harita/listede gorunur</Text>}
-                />
-                <MapPanelContent alerts={filteredAlerts} devices={visibleData.devices} viewMode={effectiveViewMode} />
-              </Card>
-            ) : null}
-
-            <div className="workspace-lower">
-              {currentProject && moduleVisibility.canUseDeviceSetup ? (
-                <div className="setup-column">
-                  <DeviceDiscoveryCard
-                    discoveredDevices={dashboardData.discoveredDevices}
-                    onRegisterDevice={(input) =>
-                      registerDeviceFromDiscovery({
-                        ...input,
-                        discoveredDevices: dashboardData.discoveredDevices,
-                        project: currentProject,
-                      })
-                    }
-                    onDeviceRegistered={(device) =>
-                      setDashboardData((currentData) => ({
-                        ...currentData,
-                        devices: currentData.devices.some((candidate) => candidate.id === device.id)
-                          ? currentData.devices.map((candidate) => (candidate.id === device.id ? device : candidate))
-                          : [...currentData.devices, device],
-                      }))
-                    }
-                  />
-                </div>
-              ) : !moduleVisibility.canUseDeviceSetup ? (
-                <Card className="project-card">
+            <div className="operation-stage">
+              {moduleVisibility.canViewMap ? (
+                <Card className="map-panel">
                   <CardHeader
-                    header={<Text weight="semibold">Cihaz kurulumu</Text>}
-                    description={<Text size={200}>Bu paket cihaz kurulum panelini icermiyor</Text>}
+                    header={<Text weight="semibold">Kayitli cihaz alani</Text>}
+                    description={<Text size={200}>Kaydettigin cihazlar harita/listede gorunur</Text>}
                   />
-                  <ListState message="Cihaz kurulumu modulu kapali" tone="default" />
-                </Card>
-              ) : (
-                <Card className="project-card">
-                  <CardHeader
-                    header={<Text weight="semibold">Cihaz kurulumu</Text>}
-                    description={<Text size={200}>Kurulum baglami yukleniyor</Text>}
-                  />
-                  <ListState
-                    message={
-                      dashboardLoadState === 'error' ? 'Cihaz kurulum bilgisi yuklenemedi' : 'Cihazlar taraniyor'
-                    }
-                    tone={dashboardLoadState === 'error' ? 'error' : 'default'}
+                  <MapPanelContent
+                    alerts={filteredAlerts}
+                    devices={visibleData.devices}
+                    incidents={dashboardData.incidents}
+                    viewMode={effectiveViewMode}
                   />
                 </Card>
-              )}
-
-              {currentProject ? <ProjectIntakeCard project={currentProject} /> : null}
+              ) : null}
             </div>
           </section>
         </section>
 
-        <aside className="right-panel" aria-label="Alarm ve cihaz durumu">
-          {moduleVisibility.canViewAlerts ? (
-            <Card>
-              <CardHeader header={<Text weight="semibold">Alarmlar</Text>} />
-              <AlertList
-                alerts={filteredAlerts}
-                severityFilter={alertSeverityFilter}
-                viewMode={effectiveViewMode}
-                onSeverityFilterChange={setAlertSeverityFilter}
-              />
-            </Card>
-          ) : null}
+        <aside className="right-panel" aria-label="Kamera, alarm ve incident panelleri">
+          <section className="right-panel-top" aria-label="Kamera ve evidence">
+            {moduleVisibility.canViewCameraFeeds ? <CameraFeedCard cameraFeeds={dashboardData.cameraFeeds} /> : null}
+            {currentProject ? <ProjectIntakeCard project={currentProject} /> : null}
+          </section>
 
-          {moduleVisibility.canViewCameraFeeds ? <CameraFeedCard cameraFeeds={dashboardData.cameraFeeds} /> : null}
+          <section className="right-panel-bottom" aria-label="Alarm ve incident akisi">
+            <AlarmFeedCard alerts={filteredAlerts} devices={visibleData.devices} incidents={dashboardData.incidents} />
+
+            {moduleVisibility.canViewAlerts ? (
+              <Card>
+                <CardHeader header={<Text weight="semibold">Alarmlar</Text>} />
+                <AlertList
+                  alerts={filteredAlerts}
+                  severityFilter={alertSeverityFilter}
+                  viewMode={effectiveViewMode}
+                  onSeverityFilterChange={setAlertSeverityFilter}
+                />
+              </Card>
+            ) : null}
+
+            {moduleVisibility.canViewIncidents ? (
+              <IncidentList
+                incidents={dashboardData.incidents}
+                onReviewIncident={async (incident, input) => {
+                  const updatedIncident = await updateIncidentReview({
+                    incident,
+                    ...input,
+                  })
+
+                  setDashboardData((currentData) => ({
+                    ...currentData,
+                    incidents: currentData.incidents.map((candidate) =>
+                      candidate.id === updatedIncident.id ? updatedIncident : candidate,
+                    ),
+                  }))
+                }}
+              />
+            ) : null}
+          </section>
+        </aside>
+
+        <section className="bottom-panel" aria-label="RF waterfall ve timeline alani">
+          <RadarPpiPanel events={dashboardData.sensorEvents} />
 
           {moduleVisibility.canUseSensorTester ? (
             <SensorEventTester
@@ -260,45 +328,84 @@ export function App() {
             />
           ) : null}
 
-          {moduleVisibility.canViewIncidents ? (
-            <IncidentList
-              incidents={dashboardData.incidents}
-              onReviewIncident={async (incident, input) => {
-                const updatedIncident = await updateIncidentReview({
-                  incident,
-                  ...input,
-                })
-
-                setDashboardData((currentData) => ({
-                  ...currentData,
-                  incidents: currentData.incidents.map((candidate) =>
-                    candidate.id === updatedIncident.id ? updatedIncident : candidate,
-                  ),
-                }))
-              }}
-            />
-          ) : null}
-
           {moduleVisibility.canViewSensorEvents ? <SensorEventList events={dashboardData.sensorEvents} /> : null}
 
-          {moduleVisibility.canViewDevices ? (
-            <Card>
-              <CardHeader header={<Text weight="semibold">Cihazlar</Text>} />
-              <DeviceList
-                devices={filteredDevices}
-                actionDeviceId={actionDeviceId}
-                searchTerm={deviceSearchTerm}
-                statusFilter={deviceStatusFilter}
-                viewMode={effectiveViewMode}
-                onDeleteDevice={(device) => void handleDeleteDevice(device)}
-                onDisconnectDevice={(device) => void handleDisconnectDevice(device)}
-                onSearchTermChange={setDeviceSearchTerm}
-                onStatusFilterChange={setDeviceStatusFilter}
-              />
-            </Card>
-          ) : null}
-        </aside>
+          <Card className="timeline-placeholder">
+            <CardHeader
+              header={<Text weight="semibold">RF / Timeline</Text>}
+              description={<Text size={200}>Waterfall ve zaman cizelgesi icin ayrilmis alt panel</Text>}
+            />
+            <div className="timeline-grid" aria-hidden="true" />
+          </Card>
+        </section>
       </main>
     </FluentProvider>
   )
+}
+
+function ResizablePanel({
+  children,
+  height,
+  label,
+  onHeightChange,
+}: {
+  children: ReactNode
+  height: number
+  label: string
+  onHeightChange: (height: number) => void
+}) {
+  const startYRef = useRef<number>(0)
+  const startHeightRef = useRef<number>(height)
+
+  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    event.preventDefault()
+    startYRef.current = event.clientY
+    startHeightRef.current = height
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+      return
+    }
+
+    const nextHeight = Math.min(900, Math.max(240, startHeightRef.current + event.clientY - startYRef.current))
+    onHeightChange(nextHeight)
+  }
+
+  function handlePointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
+
+  return (
+    <div className="left-resizable-panel" style={{ height }}>
+      <div className="left-resizable-content">{children}</div>
+      <div
+        aria-label={label}
+        className="left-resize-handle"
+        role="separator"
+        tabIndex={0}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      />
+    </div>
+  )
+}
+
+function upsertRegisteredCameraFeed(
+  cameraFeeds: MockDashboardData['cameraFeeds'],
+  device: Device,
+): MockDashboardData['cameraFeeds'] {
+  const cameraFeed = createCameraFeedForRegisteredDevice(device)
+
+  if (!cameraFeed) {
+    return cameraFeeds
+  }
+
+  return cameraFeeds.some((candidate) => candidate.id === cameraFeed.id)
+    ? cameraFeeds.map((candidate) => (candidate.id === cameraFeed.id ? cameraFeed : candidate))
+    : [cameraFeed, ...cameraFeeds]
 }

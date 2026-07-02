@@ -63,7 +63,7 @@ export function AlertList({ alerts, onSeverityFilterChange, severityFilter, view
         <ListState message="Bu seviyeye uyan alarm yok" />
       ) : (
         alerts.map((alert) => (
-          <div className="alert-row" key={alert.id}>
+          <div className={`alert-row alert-severity-${alert.severity}`} key={alert.id}>
             <div>
               <Text weight="semibold">{alert.title}</Text>
               <Text className="muted" size={200}>
