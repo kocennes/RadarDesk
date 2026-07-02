@@ -13,6 +13,14 @@ const alertSeverityColor: Record<AlertSeverity, 'informative' | 'warning' | 'dan
   critical: 'important',
 }
 
+const alertSeverityLabel: Record<AlertSeverityFilter, string> = {
+  all: 'Tumu',
+  low: 'Dusuk',
+  medium: 'Orta',
+  high: 'Yuksek',
+  critical: 'Kritik',
+}
+
 export type AlertListProps = {
   alerts: Alert[]
   severityFilter: AlertSeverityFilter
@@ -22,15 +30,15 @@ export type AlertListProps = {
 
 export function AlertList({ alerts, onSeverityFilterChange, severityFilter, viewMode }: AlertListProps) {
   if (viewMode === 'loading') {
-    return <ListState message="Loading alerts" />
+    return <ListState message="Alarmlar yukleniyor" />
   }
 
   if (viewMode === 'error') {
-    return <ListState message="Alerts could not be loaded" tone="error" />
+    return <ListState message="Alarmlar yuklenemedi" tone="error" />
   }
 
   if (viewMode === 'empty') {
-    return <ListState message="No alerts in this demo state" />
+    return <ListState message="Bu UI durumunda alarm yok" />
   }
 
   function handleSeverityFilterChange(event: ChangeEvent<HTMLSelectElement>) {
@@ -40,19 +48,19 @@ export function AlertList({ alerts, onSeverityFilterChange, severityFilter, view
   return (
     <div className="stack">
       <div className="panel-filters panel-filters-single">
-        <Field label="Severity" size="small">
-          <Select aria-label="Filter alerts by severity" value={severityFilter} onChange={handleSeverityFilterChange}>
-            <option value="all">All</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
+        <Field label="Seviye" size="small">
+          <Select aria-label="Alarmlari seviye ile filtrele" value={severityFilter} onChange={handleSeverityFilterChange}>
+            <option value="all">{alertSeverityLabel.all}</option>
+            <option value="low">{alertSeverityLabel.low}</option>
+            <option value="medium">{alertSeverityLabel.medium}</option>
+            <option value="high">{alertSeverityLabel.high}</option>
+            <option value="critical">{alertSeverityLabel.critical}</option>
           </Select>
         </Field>
       </div>
 
       {alerts.length === 0 ? (
-        <ListState message="No alerts match this severity" />
+        <ListState message="Bu seviyeye uyan alarm yok" />
       ) : (
         alerts.map((alert) => (
           <div className="alert-row" key={alert.id}>
@@ -62,7 +70,7 @@ export function AlertList({ alerts, onSeverityFilterChange, severityFilter, view
                 {alert.area} / {formatDisplayTime(alert.timestamp)}
               </Text>
             </div>
-            <Badge color={alertSeverityColor[alert.severity]}>{alert.severity}</Badge>
+            <Badge color={alertSeverityColor[alert.severity]}>{alertSeverityLabel[alert.severity]}</Badge>
           </div>
         ))
       )}

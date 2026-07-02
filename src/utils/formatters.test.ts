@@ -7,6 +7,6 @@ describe('formatters', () => {
   })
 
   it('uses a safe fallback for empty time values', () => {
-    expect(formatDisplayTime('   ')).toBe('Unknown time')
+    expect(formatDisplayTime('   ')).toBe('Bilinmeyen zaman')
   })
 })

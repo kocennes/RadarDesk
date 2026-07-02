@@ -69,6 +69,61 @@ type Device = {
 }
 ```
 
+RadarDesk buyurken musteri/proje/paket/yetki ayrimi merkezi model olarak ele alinmalidir:
+
+```text
+Customer
+  Project/Site
+    Device
+    CameraFeed
+
+ProductPackage
+  allowedDeviceTypes
+  allowedModules
+
+AccessGroup
+  customerId
+  projectIds
+  packageId
+  role
+
+User
+  groupMemberships
+```
+
+Lokal cihaz kurulumu asamasinda cihaz kaydi su ayrimi korumalidir:
+
+```text
+DiscoveredDevice
+  detectedLabel
+  deviceType
+  productProfile
+  capabilities
+  rawSource / ingestMode
+
+RegisteredDevice
+  displayName        -> kullanici yazar
+  deviceType         -> backend/discovery belirler
+  productProfile     -> backend/discovery belirler
+  capabilities       -> backend/discovery belirler
+  localEvidencePath? -> olay kaniti icin lokal dosya referansi
+```
+
+Kurallar:
+
+- Kullanici `displayName` alanini secer; `deviceType`, `productProfile` ve `capabilities` serbest metin olarak client'tan kabul edilmez.
+- Backend cihaz profiline gore analiz pipeline'i secer.
+- Kamera/termal, radar, RF ve C2 verileri ayni ham formatta varsayilmaz; backend sinirinda typed event modeline normalize edilir.
+- Ham medya lokal dosyada, event metadata'si typed domain modelinde tutulur.
+
+Kurallar:
+
+- Paket, hangi ekran/modul ve cihaz tiplerinin gorulebilecegini tanimlar.
+- Project/Site, hangi gercek cihaz ve kamera feedlerinin kullaniciya ait oldugunu tanimlar.
+- AccessGroup, cok sayida viewer/operator kullanicisini toplu yetkilendirmek icin kullanilir.
+- User bazli override sadece istisna durumlarda dusunulmelidir; ana yetkilendirme grup uzerinden ilerlemelidir.
+- Ayni paket farkli musterilerde tekrar kullanilabilir, ancak cihaz ve veri kayitlari musteri/proje bazinda ayrilmalidir.
+
 ## API Katmani
 
 - `fetch` cagrilari her component icine dagitilmamali.
@@ -97,6 +152,8 @@ server/
 ```
 
 Frontend ve backend ayni repoda kalacaksa ortak domain tiplerinin tekrarini azaltmak icin ileride `shared/` klasoru degerlendirilebilir; ilk MVP'de basitlik onceliklidir.
+
+Auth ve paket bazli yetki eklendiginde API response'lari kullanicinin effective access sonucuna gore filtrelenmelidir. Frontend sadece gelen modulleri render etmeli; yetkisiz cihaz tiplerini client tarafinda saklamak tek basina yeterli kabul edilmemelidir.
 
 ## Buyume Kurali
 

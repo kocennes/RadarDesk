@@ -1,15 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import { alerts } from '../mocks/alerts'
+import { cameraFeeds } from '../mocks/cameraFeeds'
+import { discoveredDevices } from '../mocks/discoveredDevices'
 import { devices } from '../mocks/devices'
 import { projects } from '../mocks/projects'
+import { sensorEvents } from '../mocks/sensorEvents'
 import { users } from '../mocks/users'
 import {
   fetchMockDashboardData,
+  fetchMockCameraFeeds,
   fetchMockDevices,
+  fetchMockDiscoveredDevices,
+  fetchMockSensorEvents,
   getMockAlerts,
+  getMockCameraFeeds,
   getMockDashboardData,
   getMockDevices,
+  getMockDiscoveredDevices,
   getMockProjects,
+  getMockSensorEvents,
   getMockUsers,
   saveMockProjectDraft,
 } from './mockApi'
@@ -22,10 +31,16 @@ describe('mockApi', () => {
     expect(dashboardData.alerts).toHaveLength(alerts.length)
     expect(dashboardData.projects).toHaveLength(projects.length)
     expect(dashboardData.users).toHaveLength(users.length)
+    expect(dashboardData.cameraFeeds).toHaveLength(cameraFeeds.length)
+    expect(dashboardData.discoveredDevices).toHaveLength(discoveredDevices.length)
+    expect(dashboardData.sensorEvents).toHaveLength(sensorEvents.length)
   })
 
   it('exposes async mock fetchers for the future API transition', async () => {
     await expect(fetchMockDevices()).resolves.toHaveLength(devices.length)
+    await expect(fetchMockCameraFeeds()).resolves.toHaveLength(cameraFeeds.length)
+    await expect(fetchMockDiscoveredDevices()).resolves.toHaveLength(discoveredDevices.length)
+    await expect(fetchMockSensorEvents()).resolves.toHaveLength(sensorEvents.length)
 
     const dashboardData = await fetchMockDashboardData()
 
@@ -37,15 +52,25 @@ describe('mockApi', () => {
     const mockAlerts = getMockAlerts()
     const mockProjects = getMockProjects()
     const mockUsers = getMockUsers()
+    const mockCameraFeeds = getMockCameraFeeds()
+    const mockDiscoveredDevices = getMockDiscoveredDevices()
+    const mockSensorEvents = getMockSensorEvents()
 
     expect(mockDevices).not.toBe(devices)
     expect(mockAlerts).not.toBe(alerts)
     expect(mockProjects).not.toBe(projects)
     expect(mockUsers).not.toBe(users)
+    expect(mockCameraFeeds).not.toBe(cameraFeeds)
+    expect(mockDiscoveredDevices).not.toBe(discoveredDevices)
+    expect(mockSensorEvents).not.toBe(sensorEvents)
     expect(mockDevices[0]).not.toBe(devices[0])
     expect(mockAlerts[0]).not.toBe(alerts[0])
     expect(mockProjects[0]).not.toBe(projects[0])
     expect(mockUsers[0]).not.toBe(users[0])
+    expect(mockCameraFeeds[0]).not.toBe(cameraFeeds[0])
+    expect(mockDiscoveredDevices[0]).not.toBe(discoveredDevices[0])
+    expect(mockSensorEvents[0]).not.toBe(sensorEvents[0])
+    expect(mockSensorEvents[0].metadata).not.toBe(sensorEvents[0].metadata)
   })
 
   it('keeps the mock role set aligned with the planned access model', () => {
@@ -56,19 +81,30 @@ describe('mockApi', () => {
     expect(roles).toContain('viewer')
   })
 
+  it('includes effective access for the default full-ops mock user', () => {
+    const dashboardData = getMockDashboardData()
+
+    expect(dashboardData.effectiveAccess.packageIds).toContain('full-ops')
+    expect(dashboardData.effectiveAccess.allowedDeviceTypes).toEqual(
+      expect.arrayContaining(['radar', 'rf', 'eo-ir', 'c2']),
+    )
+    expect(dashboardData.effectiveAccess.allowedModules).toContain('camera-feeds')
+  })
+
   it('saves a sanitized local project draft without mutating mock projects', () => {
     const savedProject = saveMockProjectDraft({
-      name: '  Field Survey  ',
-      customer: '  Training Customer  ',
-      site: '  Demo Site  ',
+      name: '  Saha Kesfi  ',
+      customer: '  Egitim Musterisi  ',
+      site: '  Egitim Sahasi  ',
       status: 'draft',
     })
 
     expect(savedProject).toEqual({
       id: 'project-draft-local',
-      name: 'Field Survey',
-      customer: 'Training Customer',
-      site: 'Demo Site',
+      customerId: 'customer-draft-local',
+      name: 'Saha Kesfi',
+      customer: 'Egitim Musterisi',
+      site: 'Egitim Sahasi',
       status: 'draft',
     })
     expect(projects).toHaveLength(1)

@@ -22,6 +22,20 @@ const alertColors: Record<AlertSeverity, string> = {
   critical: '#7f1d1d',
 }
 
+const deviceStatusLabel: Record<Device['status'], string> = {
+  alarm: 'Alarm',
+  offline: 'Offline',
+  online: 'Online',
+  warning: 'Uyari',
+}
+
+const alertSeverityLabel: Record<AlertSeverity, string> = {
+  low: 'Dusuk',
+  medium: 'Orta',
+  high: 'Yuksek',
+  critical: 'Kritik',
+}
+
 export function OperationsMap({ alerts, devices }: OperationsMapProps) {
   const center = getMapCenter(devices)
   const alertOverlays = getAlertOverlays(alerts, devices)
@@ -40,13 +54,13 @@ export function OperationsMap({ alerts, devices }: OperationsMapProps) {
       />
 
       <LayersControl position="topright">
-        <LayersControl.Overlay checked name="Device markers">
+        <LayersControl.Overlay checked name="Cihaz markerlari">
           <LayerGroup>{devices.map((device) => renderDeviceMarker(device))}</LayerGroup>
         </LayersControl.Overlay>
-        <LayersControl.Overlay checked name="Range rings">
+        <LayersControl.Overlay checked name="Menzil cemberleri">
           <LayerGroup>{devices.map((device) => renderRangeRing(device))}</LayerGroup>
         </LayersControl.Overlay>
-        <LayersControl.Overlay checked name="Alert overlays">
+        <LayersControl.Overlay checked name="Alarm katmanlari">
           <LayerGroup>{alertOverlays.map((overlay) => renderAlertOverlay(overlay))}</LayerGroup>
         </LayersControl.Overlay>
       </LayersControl>
@@ -71,7 +85,7 @@ function renderDeviceMarker(device: Device) {
       <Popup>
         {device.name}
         <br />
-        Status: {device.status}
+        Status: {deviceStatusLabel[device.status]}
       </Popup>
     </CircleMarker>
   )
@@ -94,7 +108,7 @@ function renderRangeRing(device: Device) {
       <Popup>
         {device.name}
         <br />
-        Range: {device.rangeKm} km
+        Menzil: {device.rangeKm} km
       </Popup>
     </Circle>
   )
@@ -116,9 +130,9 @@ function renderAlertOverlay({ alert, position }: AlertOverlay) {
       <Popup>
         {alert.title}
         <br />
-        Severity: {alert.severity}
+        Seviye: {alertSeverityLabel[alert.severity]}
         <br />
-        Area: {alert.area}
+        Bolge: {alert.area}
       </Popup>
     </CircleMarker>
   )

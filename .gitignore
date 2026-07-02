@@ -1,6 +1,7 @@
 node_modules/
 dist/
 coverage/
+local-evidence/
 .DS_Store
 *.tsbuildinfo
 .env
@@ -10,3 +11,4 @@ coverage/
 # Local sensitive work documents. Keep these on this machine unless explicitly approved.
 docs/pdfler/
 docs/yeni-is-pdf-ozeti.md
+.aider*

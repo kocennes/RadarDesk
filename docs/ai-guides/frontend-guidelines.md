@@ -5,6 +5,7 @@ Bu rehber React, TypeScript, CSS, component, form, dashboard, tablo ve harita ek
 ## Genel Yaklasim
 
 - Ilk ekran gercek isi yaptirsin; gereksiz landing/hero tasarimindan kacin.
+- Bu projenin simdiki ilk isi lokal cihaz kurulumudur: cihaz kesfi, secim, adlandirma ve kayitli cihaz listesi admin panel ayarlarindan once gelmelidir.
 - Operasyonel uygulamalarda sade, okunabilir ve is odakli tasarim kullan.
 - Kullanici ekranda ne yapacagini tahmin edebilmeli.
 - Bilgi hiyerarsisi net olmali: baslik, aksiyon, icerik, durum.

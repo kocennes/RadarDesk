@@ -5,11 +5,13 @@ Bu rehber; auth, API, veri, dosya islemleri, dashboard, musteri formlari ve savu
 ## Temel Prensipler
 
 - Gizli bilgi varsayilan olarak korunur.
+- Kamera snapshot'i, termal goruntu, radar izi, RF kaydi ve alarm kaniti varsayilan olarak lokal backend makinesinde tutulur; bulut veya ucuncu parti servise gonderilmez.
 - Client tarafindaki kontrol tek basina guvenlik sayilmaz.
 - API key, token, sifre, gizli URL, musteri bilgisi veya proje bilgisi kaynak koda yazilmaz.
 - Hassas veri loglanmaz.
 - PDF ve is dokumanlari kullanici izni olmadan kopyalanmaz, upload edilmez, disari aktarilmaz.
 - Yetki kontrolu backend/API tarafinda yapilmalidir.
+- Ham medya database'e gomulmemelidir; metadata ve lokal dosya referansi tutulmalidir.
 
 ## Frontend Guvenligi
 
@@ -26,6 +28,9 @@ Bu rehber; auth, API, veri, dosya islemleri, dashboard, musteri formlari ve savu
 - Logout akisi token/session temizlemelidir.
 - Yetki seviyeleri net olmali: admin, operator, viewer gibi.
 - Protected route sadece UI gizleme degil, API yetkisiyle desteklenmelidir.
+- Login sonrasi backend, kullanicinin customer/project/site, role, access group, paket ve modul yetkilerini hesaplamalidir.
+- Cok sayida viewer icin yetki tek tek kullaniciya degil, mumkunse access group uzerinden verilmelidir.
+- User bazli ek izin veya kisit sadece istisna olarak dusunulmelidir.
 
 ## API Guvenligi
 
@@ -37,6 +42,12 @@ Bu rehber; auth, API, veri, dosya islemleri, dashboard, musteri formlari ve savu
 - Request body icindeki her alan otomatik kaydedilmemelidir; yazilabilir alanlar allowlist ile secilmelidir.
 - API response'lari sadece UI'in ihtiyaci olan alanlari dondurmelidir; hassas veya ic sistem alanlari response'a eklenmemelidir.
 - Merkezi error handler teknik detaylari production response'larinda gostermemelidir.
+- Musterinin satin almadigi paket/modul verisi API response'una eklenmemelidir.
+- Kamera + termal kamera paketi olan bir kullaniciya radar, RF veya C2 cihazlari response olarak donmemelidir.
+- Ayni paketi kullanan farkli musterilerin cihazlari, camera feedleri, alarmlari ve stream/config bilgileri kesin olarak customer/project/site bazinda ayrilmalidir.
+- Frontend'de modul gizlemek sadece UX davranisidir; gercek veri izolasyonu backend ve database sorgularinda saglanmalidir.
+- Cihaz kesfi endpointleri genis veya rastgele ag taramasi yapmamalidir; yalnizca acikca izin verilmis IP araligi, protokol ve timeout ile calismalidir.
+- Kesfedilen cihazlara kullanici tarafindan verilen adlar backend'de validate edilmeli; client'tan gelen `type`, `projectId`, `customerId`, rol veya yetki alanlari oldugu gibi kabul edilmemelidir.
 
 ## Backend Baslangic Guvenlik Taslagi
 
@@ -59,6 +70,7 @@ Bu proje ileride RF, radar, EO/IR, C2, jammer, C-UAS veya musteri kesif formlari
 
 ## Kod Yazarken Kontrol Listesi
 
+- [ ] Davranis degisikligi once TODO ve ilgili `.md` dosyalarina yazildi.
 - [ ] Gizli bilgi koda gomulmedi.
 - [ ] Kullanici girdisi dogrulaniyor.
 - [ ] Hata mesajlari veri sizdirmiyor.

@@ -27,16 +27,16 @@ export function getDashboardViewData(
 
 export function getDashboardViewLabel(mode: DashboardViewMode): string {
   if (mode === 'loading') {
-    return 'Loading demo'
+    return 'Yukleniyor'
   }
 
   if (mode === 'empty') {
-    return 'Empty demo'
+    return 'Veri yok'
   }
 
   if (mode === 'error') {
-    return 'Error demo'
+    return 'Hata'
   }
 
-  return 'Success demo'
+  return 'Mock data'
 }

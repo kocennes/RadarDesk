@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Button, Card, CardHeader, Field, Input, Select, Text } from '@fluentui/react-components'
+import { ButtonInfo } from '../../components/ui/ButtonInfo'
 import { saveProjectDraft } from '../../services/apiClient'
 import type { Project } from '../../types/domain'
 import {
@@ -12,6 +13,12 @@ import {
 
 export type ProjectIntakeCardProps = {
   project: Project
+}
+
+const projectStatusLabel: Record<Project['status'], string> = {
+  draft: 'Taslak',
+  survey: 'Kesif',
+  active: 'Aktif',
 }
 
 export function ProjectIntakeCard({ project }: ProjectIntakeCardProps) {
@@ -53,21 +60,21 @@ export function ProjectIntakeCard({ project }: ProjectIntakeCardProps) {
 
     try {
       const savedProject = await saveProjectDraft(projectDraft)
-      setSaveMessage(`${savedProject.name} draft saved.`)
+      setSaveMessage(`${savedProject.name} taslagi kaydedildi.`)
     } catch {
-      setSaveMessage('Draft could not be saved. Please try again.')
+      setSaveMessage('Taslak kaydedilemedi. Lutfen tekrar deneyin.')
     }
   }
 
   return (
     <Card className="project-card">
       <CardHeader
-        header={<Text weight="semibold">Project intake</Text>}
-        description={<Text size={200}>Validated frontend form shell</Text>}
+        header={<Text weight="semibold">Proje kaydi</Text>}
+        description={<Text size={200}>Dogrulamali proje taslak formu</Text>}
       />
       <form className="form-grid" onSubmit={handleProjectSubmit}>
         <Field
-          label="Project name"
+          label="Proje adi"
           required
           validationMessage={projectErrors.name ? <span id={nameValidationId}>{projectErrors.name}</span> : undefined}
           validationState={projectErrors.name ? 'error' : 'none'}
@@ -80,7 +87,7 @@ export function ProjectIntakeCard({ project }: ProjectIntakeCardProps) {
           />
         </Field>
         <Field
-          label="Customer"
+          label="Musteri"
           required
           validationMessage={
             projectErrors.customer ? <span id={customerValidationId}>{projectErrors.customer}</span> : undefined
@@ -95,7 +102,7 @@ export function ProjectIntakeCard({ project }: ProjectIntakeCardProps) {
           />
         </Field>
         <Field
-          label="Site"
+          label="Saha"
           validationMessage={projectErrors.site ? <span id={siteValidationId}>{projectErrors.site}</span> : undefined}
           validationState={projectErrors.site ? 'error' : 'none'}
         >
@@ -107,17 +114,17 @@ export function ProjectIntakeCard({ project }: ProjectIntakeCardProps) {
           />
         </Field>
         <Field
-          label="Priority"
-          hint={<span id={statusDescriptionId}>Local demo status; backend authorization will decide final status.</span>}
+          label="Durum"
+          hint={<span id={statusDescriptionId}>Yerel taslak status; final status backend yetkilendirmesiyle belirlenir.</span>}
         >
           <Select
             aria-describedby={statusDescriptionId}
             value={projectDraft.status}
             onChange={handleProjectStatusChange}
           >
-            <option value="draft">Draft</option>
-            <option value="survey">Survey</option>
-            <option value="active">Active</option>
+            <option value="draft">{projectStatusLabel.draft}</option>
+            <option value="survey">{projectStatusLabel.survey}</option>
+            <option value="active">{projectStatusLabel.active}</option>
           </Select>
         </Field>
         {saveMessage ? (
@@ -125,9 +132,12 @@ export function ProjectIntakeCard({ project }: ProjectIntakeCardProps) {
             <Text weight="semibold">{saveMessage}</Text>
           </div>
         ) : null}
-        <Button appearance="primary" type="submit">
-          Save draft
-        </Button>
+        <div className="button-with-info form-button-with-info">
+          <Button appearance="primary" type="submit">
+            Taslagi kaydet
+          </Button>
+          <ButtonInfo label="Formdaki proje bilgilerini dogrular ve mock kaynakli taslak kayit olarak saklar." />
+        </div>
       </form>
     </Card>
   )

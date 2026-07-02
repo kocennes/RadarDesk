@@ -13,15 +13,15 @@ export function validateProjectDraft(draft: ProjectDraft): ProjectDraftErrors {
   const errors: ProjectDraftErrors = {}
 
   if (draft.name.trim().length === 0) {
-    errors.name = 'Project name is required.'
+    errors.name = 'Proje adi zorunludur.'
   }
 
   if (draft.customer.trim().length === 0) {
-    errors.customer = 'Customer is required.'
+    errors.customer = 'Musteri zorunludur.'
   }
 
   if (draft.site.trim().length > 80) {
-    errors.site = 'Site must be 80 characters or fewer.'
+    errors.site = 'Saha adi 80 karakter veya daha kisa olmalidir.'
   }
 
   return errors

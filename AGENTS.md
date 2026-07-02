@@ -1,5 +1,4 @@
-# AGENTS.md
-
+# CLAUD.md
 Bu repo uzerinde calisan her AI ajan once bu dosyayi, sonra yapacagi isle ilgili rehber dosyalarini okumalidir. Amac, kod yazarken rastgele karar almak yerine guvenlik, frontend tasarim, mimari ve kalite kurallarini takip etmektir.
 
 ## Zorunlu Calisma Sekli
@@ -41,3 +40,7 @@ Bir kod parcasina baslamadan once kendine sunlari sor:
 - Calistirmam gereken dogrulama komutu ne?
 
 Ilgili rehber okunmadan kod yazilmis sayilmaz.
+
+## Yeni Topbar Component
+
+src/components/layout/Topbar.tsx

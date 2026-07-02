@@ -14,7 +14,7 @@ describe('filterDevices', () => {
 
   it('filters devices by search term', () => {
     const result = filterDevices(devices, {
-      searchTerm: 'east',
+      searchTerm: 'dogu',
       status: 'all',
     })
 
@@ -23,7 +23,7 @@ describe('filterDevices', () => {
 
   it('combines search term and status filters', () => {
     const result = filterDevices(devices, {
-      searchTerm: 'tower',
+      searchTerm: 'kule',
       status: 'warning',
     })
 

@@ -16,5 +16,11 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["server/src", "src/mocks", "src/services/mockApi.ts", "src/types"]
+  "include": [
+    "server/src",
+    "src/features/devices/deviceRegistration.ts",
+    "src/mocks",
+    "src/services/accessControl.ts",
+    "src/types"
+  ]
 }

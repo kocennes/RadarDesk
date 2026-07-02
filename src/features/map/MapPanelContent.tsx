@@ -19,7 +19,7 @@ export function MapPanelContent({ alerts, devices, viewMode }: MapPanelContentPr
   if (viewMode === 'loading') {
     return (
       <div aria-live="polite" className="map-surface state-surface" role="status">
-        <Spinner label="Loading operation picture" />
+        <Spinner label="Operasyon gorunumu yukleniyor" />
       </div>
     )
   }
@@ -28,9 +28,9 @@ export function MapPanelContent({ alerts, devices, viewMode }: MapPanelContentPr
     return (
       <div aria-live="assertive" className="map-surface state-surface" role="alert">
         <Text size={500} weight="semibold">
-          Operation feed unavailable
+          Operasyon verisi kullanilamiyor
         </Text>
-        <Text className="muted">The UI can still render a safe error state without backend data.</Text>
+        <Text className="muted">UI, backend verisi olmadan da guvenli hata durumunu gosterebilir.</Text>
       </div>
     )
   }
@@ -39,19 +39,19 @@ export function MapPanelContent({ alerts, devices, viewMode }: MapPanelContentPr
     return (
       <div aria-live="polite" className="map-surface state-surface" role="status">
         <Text size={500} weight="semibold">
-          No active coverage yet
+          Henuz aktif kapsama yok
         </Text>
-        <Text className="muted">Add mock devices or connect an API to populate this view.</Text>
+        <Text className="muted">Bu gorunumu doldurmak icin mock cihaz ekleyin veya planlanan API kaynagini baglayin.</Text>
       </div>
     )
   }
 
   return (
-    <div className="map-surface" aria-label="Mock operation map">
+    <div className="map-surface" aria-label="Mock data operasyon haritasi">
       <Suspense
         fallback={
           <div aria-live="polite" className="map-surface state-surface map-loading" role="status">
-            <Spinner label="Loading map module" />
+            <Spinner label="Harita modulu yukleniyor" />
           </div>
         }
       >

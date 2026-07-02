@@ -1,0 +1,57 @@
+import { Badge, Card, CardHeader, Text } from '@fluentui/react-components'
+import { ListState } from '../../components/ui/ListState'
+import type { CameraFeed } from '../../types/domain'
+
+type CameraFeedCardProps = {
+  cameraFeeds: CameraFeed[]
+}
+
+const statusColor: Record<CameraFeed['status'], 'success' | 'warning' | 'danger'> = {
+  offline: 'danger',
+  online: 'success',
+  standby: 'warning',
+}
+
+const statusLabel: Record<CameraFeed['status'], string> = {
+  offline: 'Offline',
+  online: 'Online',
+  standby: 'Beklemede',
+}
+
+const modeLabel: Record<CameraFeed['mode'], string> = {
+  day: 'gunduz',
+  thermal: 'termal',
+}
+
+export function CameraFeedCard({ cameraFeeds }: CameraFeedCardProps) {
+  return (
+    <Card>
+      <CardHeader
+        header={<Text weight="semibold">Kamera dogrulama</Text>}
+        description={<Text size={200}>Kamera API entegrasyonuna hazir mock stream metadatasi</Text>}
+      />
+      <div className="stack">
+        {cameraFeeds.length === 0 ? (
+          <ListState message="Mevcut veri kaynaginda kamera kanali yok" />
+        ) : (
+          cameraFeeds.map((cameraFeed) => (
+            <article className="camera-row" key={cameraFeed.id}>
+              <div>
+                <Text weight="semibold">{cameraFeed.name}</Text>
+                <Text block className="muted" size={200}>
+                  {cameraFeed.fieldOfView} / {modeLabel[cameraFeed.mode]} / son frame {cameraFeed.lastFrameAt}
+                </Text>
+                <Text block className="muted" size={200}>
+                  Kanit kaydi olay olusunca backend tarafinda otomatik alinir.
+                </Text>
+              </div>
+              <Badge appearance="filled" color={statusColor[cameraFeed.status]}>
+                {statusLabel[cameraFeed.status]}
+              </Badge>
+            </article>
+          ))
+        )}
+      </div>
+    </Card>
+  )
+}

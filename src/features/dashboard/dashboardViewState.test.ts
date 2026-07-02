@@ -24,9 +24,9 @@ describe('dashboard view state helpers', () => {
   })
 
   it('returns readable labels for controls', () => {
-    expect(getDashboardViewLabel('loading')).toBe('Loading demo')
-    expect(getDashboardViewLabel('empty')).toBe('Empty demo')
-    expect(getDashboardViewLabel('error')).toBe('Error demo')
-    expect(getDashboardViewLabel('success')).toBe('Success demo')
+    expect(getDashboardViewLabel('loading')).toBe('Yukleniyor')
+    expect(getDashboardViewLabel('empty')).toBe('Veri yok')
+    expect(getDashboardViewLabel('error')).toBe('Hata')
+    expect(getDashboardViewLabel('success')).toBe('Mock data')
   })
 })

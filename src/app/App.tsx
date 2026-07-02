@@ -1,21 +1,23 @@
 import { useEffect, useState } from 'react'
-import { Badge, Button, Card, CardHeader, FluentProvider, Text, Title2, webLightTheme } from '@fluentui/react-components'
+import { Card, CardHeader, FluentProvider, Text, webLightTheme } from '@fluentui/react-components'
+import { Sidebar } from '../components/layout/Sidebar'
+import { Topbar } from '../components/layout/Topbar'
 import { ListState } from '../components/ui/ListState'
 import { AlertList } from '../features/alerts/AlertList'
 import { filterAlerts, type AlertSeverityFilter } from '../features/alerts/alertFilters'
+import { CameraFeedCard } from '../features/cameras/CameraFeedCard'
 import { getDashboardStats } from '../features/dashboard/dashboardMetrics'
-import {
-  getDashboardViewData,
-  getDashboardViewLabel,
-  type DashboardViewMode,
-} from '../features/dashboard/dashboardViewState'
+import { getDashboardViewData, type DashboardViewMode } from '../features/dashboard/dashboardViewState'
 import { MetricCard } from '../features/dashboard/MetricCard'
 import { StateToolbar } from '../features/dashboard/StateToolbar'
+import { DeviceDiscoveryCard } from '../features/devices/DeviceDiscoveryCard'
 import { DeviceList } from '../features/devices/DeviceList'
 import { filterDevices, type DeviceStatusFilter } from '../features/devices/deviceFilters'
+import { SensorEventList } from '../features/events/SensorEventList'
+import { SensorEventTester } from '../features/events/SensorEventTester'
 import { MapPanelContent } from '../features/map/MapPanelContent'
 import { ProjectIntakeCard } from '../features/projects/ProjectIntakeCard'
-import { fetchDashboardData } from '../services/apiClient'
+import { fetchDashboardData, ingestSensorEvent, registerDeviceFromDiscovery } from '../services/apiClient'
 import type { MockDashboardData } from '../services/mockApi'
 import './App.css'
 
@@ -24,6 +26,18 @@ const emptyDashboardData: MockDashboardData = {
   alerts: [],
   projects: [],
   users: [],
+  cameraFeeds: [],
+  discoveredDevices: [],
+  sensorEvents: [],
+  effectiveAccess: {
+    userId: '',
+    role: 'none',
+    customerIds: [],
+    projectIds: [],
+    packageIds: [],
+    allowedDeviceTypes: [],
+    allowedModules: [],
+  },
 }
 
 type DashboardLoadState = 'loading' | 'success' | 'error'
@@ -72,89 +86,78 @@ export function App() {
     searchTerm: deviceSearchTerm,
     status: deviceStatusFilter,
   })
+  const canViewCameraFeeds = dashboardData.effectiveAccess.allowedModules.includes('camera-feeds')
 
   return (
     <FluentProvider theme={webLightTheme}>
       <main className="app-shell">
-        <aside className="sidebar" aria-label="Device navigation">
-          <div>
-            <Text size={600} weight="semibold">
-              RadarDesk
-            </Text>
-            <Text className="muted" size={200}>
-              UI-first operations demo
-            </Text>
-          </div>
-
-          <nav className="nav-list" aria-label="Main sections">
-            <Button appearance="primary">Dashboard</Button>
-            <Button appearance="subtle" disabled>
-              Devices
-            </Button>
-            <Button appearance="subtle" disabled>
-              Projects
-            </Button>
-            <Button appearance="subtle" disabled>
-              Reports
-            </Button>
-          </nav>
-        </aside>
+        <Sidebar />
 
         <section className="content">
-          <header className="topbar">
-            <div>
-              <Title2>Operations Dashboard</Title2>
-              <Text className="muted">
-                {currentProject ? `${currentProject.customer} / ${currentProject.site}` : 'Loading project context'}
-              </Text>
-            </div>
-            <div className="topbar-actions">
-              <Badge appearance="filled" color="brand">
-                {getDashboardViewLabel(effectiveViewMode)}
-              </Badge>
-            </div>
-          </header>
-
+          <Topbar currentProject={currentProject} effectiveViewMode={effectiveViewMode} />
           <StateToolbar viewMode={viewMode} onViewModeChange={setViewMode} />
 
-          <section className="metric-grid" aria-label="Dashboard summary">
-            <MetricCard label="Total devices" value={stats.totalDevices} tone="neutral" />
-            <MetricCard label="Online devices" value={stats.onlineDevices} tone="success" />
-            <MetricCard label="Active alerts" value={stats.activeAlerts} tone="warning" />
-            <MetricCard label="Critical" value={stats.criticalAlerts} tone="danger" />
+          <section className="metric-grid" aria-label="Dashboard ozeti">
+            <MetricCard label="Toplam cihaz" value={stats.totalDevices} tone="neutral" />
+            <MetricCard label="Online cihaz" value={stats.onlineDevices} tone="success" />
+            <MetricCard label="Aktif alarm" value={stats.activeAlerts} tone="warning" />
+            <MetricCard label="Kritik" value={stats.criticalAlerts} tone="danger" />
           </section>
 
           <section className="workspace">
-            <Card className="map-panel">
-              <CardHeader
-                header={<Text weight="semibold">Live area view</Text>}
-                description={<Text size={200}>Leaflet map with mock device ranges</Text>}
-              />
-              <MapPanelContent alerts={filteredAlerts} devices={visibleData.devices} viewMode={effectiveViewMode} />
-            </Card>
-
             {currentProject ? (
-              <ProjectIntakeCard project={currentProject} />
+              <div className="setup-column">
+                <DeviceDiscoveryCard
+                  discoveredDevices={dashboardData.discoveredDevices}
+                  onRegisterDevice={(input) =>
+                    registerDeviceFromDiscovery({
+                      ...input,
+                      discoveredDevices: dashboardData.discoveredDevices,
+                      project: currentProject,
+                    })
+                  }
+                  onDeviceRegistered={(device) =>
+                    setDashboardData((currentData) => ({
+                      ...currentData,
+                      devices: currentData.devices.some((candidate) => candidate.id === device.id)
+                        ? currentData.devices.map((candidate) => (candidate.id === device.id ? device : candidate))
+                        : [...currentData.devices, device],
+                    }))
+                  }
+                />
+              </div>
             ) : (
               <Card className="project-card">
                 <CardHeader
-                  header={<Text weight="semibold">Project intake</Text>}
-                  description={<Text size={200}>Validated frontend form shell</Text>}
+                  header={<Text weight="semibold">Cihaz kurulumu</Text>}
+                  description={<Text size={200}>Kurulum baglami yukleniyor</Text>}
                 />
                 <ListState
                   message={
-                    dashboardLoadState === 'error' ? 'Project context could not be loaded' : 'Loading project context'
+                    dashboardLoadState === 'error' ? 'Cihaz kurulum bilgisi yuklenemedi' : 'Cihazlar taraniyor'
                   }
                   tone={dashboardLoadState === 'error' ? 'error' : 'default'}
                 />
               </Card>
             )}
+
+            <div className="workspace-side">
+              <Card className="map-panel">
+                <CardHeader
+                  header={<Text weight="semibold">Kayitli cihaz alani</Text>}
+                  description={<Text size={200}>Kaydettigin cihazlar harita/listede gorunur</Text>}
+                />
+                <MapPanelContent alerts={filteredAlerts} devices={visibleData.devices} viewMode={effectiveViewMode} />
+              </Card>
+
+              {currentProject ? <ProjectIntakeCard project={currentProject} /> : null}
+            </div>
           </section>
         </section>
 
-        <aside className="right-panel" aria-label="Alerts and device status">
+        <aside className="right-panel" aria-label="Alarm ve cihaz durumu">
           <Card>
-            <CardHeader header={<Text weight="semibold">Alerts</Text>} />
+            <CardHeader header={<Text weight="semibold">Alarmlar</Text>} />
             <AlertList
               alerts={filteredAlerts}
               severityFilter={alertSeverityFilter}
@@ -163,8 +166,24 @@ export function App() {
             />
           </Card>
 
+          {canViewCameraFeeds ? <CameraFeedCard cameraFeeds={dashboardData.cameraFeeds} /> : null}
+
+          <SensorEventTester
+            cameraFeeds={dashboardData.cameraFeeds}
+            devices={dashboardData.devices}
+            onCreateEvent={ingestSensorEvent}
+            onEventCreated={(event) =>
+              setDashboardData((currentData) => ({
+                ...currentData,
+                sensorEvents: [event, ...currentData.sensorEvents],
+              }))
+            }
+          />
+
+          <SensorEventList events={dashboardData.sensorEvents} />
+
           <Card>
-            <CardHeader header={<Text weight="semibold">Devices</Text>} />
+            <CardHeader header={<Text weight="semibold">Cihazlar</Text>} />
             <DeviceList
               devices={filteredDevices}
               searchTerm={deviceSearchTerm}

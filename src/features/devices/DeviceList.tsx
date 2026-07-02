@@ -5,12 +5,21 @@ import { ListState } from '../../components/ui/ListState'
 import { formatDisplayTime } from '../../utils/formatters'
 import type { DashboardViewMode } from '../dashboard/dashboardViewState'
 import type { DeviceStatusFilter } from './deviceFilters'
+import { formatCapabilities, ingestModeLabel, profileLabel } from './deviceProfiles'
 
 const deviceStatusColor: Record<DeviceStatus, 'success' | 'warning' | 'danger' | 'subtle'> = {
   online: 'success',
   warning: 'warning',
   alarm: 'danger',
   offline: 'subtle',
+}
+
+const deviceStatusLabel: Record<DeviceStatusFilter, string> = {
+  all: 'Tumu',
+  online: 'Online',
+  warning: 'Uyari',
+  alarm: 'Alarm',
+  offline: 'Offline',
 }
 
 export type DeviceListProps = {
@@ -31,15 +40,15 @@ export function DeviceList({
   viewMode,
 }: DeviceListProps) {
   if (viewMode === 'loading') {
-    return <ListState message="Loading devices" />
+    return <ListState message="Cihazlar yukleniyor" />
   }
 
   if (viewMode === 'error') {
-    return <ListState message="Devices could not be loaded" tone="error" />
+    return <ListState message="Cihazlar yuklenemedi" tone="error" />
   }
 
   if (viewMode === 'empty') {
-    return <ListState message="No devices connected yet" />
+    return <ListState message="Henuz bagli cihaz yok" />
   }
 
   function handleStatusFilterChange(event: ChangeEvent<HTMLSelectElement>) {
@@ -49,27 +58,27 @@ export function DeviceList({
   return (
     <div className="stack">
       <div className="panel-filters device-filters">
-        <Field label="Search" size="small">
+        <Field label="Arama" size="small">
           <Input
-            aria-label="Search devices"
-            placeholder="Name, location, type"
+            aria-label="Cihazlarda ara"
+            placeholder="Ad, konum, tip"
             value={searchTerm}
             onChange={(event) => onSearchTermChange(event.target.value)}
           />
         </Field>
         <Field label="Status" size="small">
-          <Select aria-label="Filter devices by status" value={statusFilter} onChange={handleStatusFilterChange}>
-            <option value="all">All</option>
-            <option value="online">Online</option>
-            <option value="warning">Warning</option>
-            <option value="alarm">Alarm</option>
-            <option value="offline">Offline</option>
+          <Select aria-label="Cihazlari status ile filtrele" value={statusFilter} onChange={handleStatusFilterChange}>
+            <option value="all">{deviceStatusLabel.all}</option>
+            <option value="online">{deviceStatusLabel.online}</option>
+            <option value="warning">{deviceStatusLabel.warning}</option>
+            <option value="alarm">{deviceStatusLabel.alarm}</option>
+            <option value="offline">{deviceStatusLabel.offline}</option>
           </Select>
         </Field>
       </div>
 
       {devices.length === 0 ? (
-        <ListState message="No devices match these filters" />
+        <ListState message="Bu filtrelere uyan cihaz yok" />
       ) : (
         devices.map((device) => (
           <div className="device-row" key={device.id}>
@@ -78,8 +87,11 @@ export function DeviceList({
               <Text className="muted" size={200}>
                 {device.location} / {device.rangeKm} km / {formatDisplayTime(device.lastSeen)}
               </Text>
+              <Text block className="muted" size={200}>
+                {profileLabel[device.profile]} / {ingestModeLabel[device.ingestMode]} / {formatCapabilities(device.capabilities)}
+              </Text>
             </div>
-            <Badge color={deviceStatusColor[device.status]}>{device.status}</Badge>
+            <Badge color={deviceStatusColor[device.status]}>{deviceStatusLabel[device.status]}</Badge>
           </div>
         ))
       )}

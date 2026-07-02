@@ -10,9 +10,9 @@ import {
 describe('project form helpers', () => {
   it('creates a draft from an existing project', () => {
     expect(createProjectDraft(projects[0])).toEqual({
-      name: 'Perimeter Demo',
-      customer: 'Training Customer',
-      site: 'Demo Site',
+      name: 'Cevre Guvenligi Egitim Senaryosu',
+      customer: 'Egitim Musterisi',
+      site: 'Egitim Sahasi',
       status: 'survey',
     })
   })
@@ -21,26 +21,26 @@ describe('project form helpers', () => {
     const draft: ProjectDraft = {
       name: ' ',
       customer: '',
-      site: 'Demo Site',
+      site: 'Egitim Sahasi',
       status: 'draft',
     }
 
     expect(validateProjectDraft(draft)).toEqual({
-      name: 'Project name is required.',
-      customer: 'Customer is required.',
+      name: 'Proje adi zorunludur.',
+      customer: 'Musteri zorunludur.',
     })
   })
 
   it('limits site names to a readable length', () => {
     const draft: ProjectDraft = {
-      name: 'Perimeter Demo',
-      customer: 'Training Customer',
+      name: 'Cevre Guvenligi Egitim Senaryosu',
+      customer: 'Egitim Musterisi',
       site: 'A'.repeat(81),
       status: 'survey',
     }
 
     expect(validateProjectDraft(draft)).toEqual({
-      site: 'Site must be 80 characters or fewer.',
+      site: 'Saha adi 80 karakter veya daha kisa olmalidir.',
     })
   })
 

@@ -1,8 +1,39 @@
 # TODO
 
+## Simdiki Odak: Lokal Tek Kullanici Cihaz Kurulumu
+
+- [x] Admin panel/musteri-yetki ekranlarini simdilik ikinci plana al; ilk acilista herhangi bir kullanicinin cihaz baglayip isimlendirebildigi lokal kurulum akisini one al.
+- [x] Ilk ekranda cihaz kesfi, cihaz secimi, kullanici tarafindan adlandirma ve kayitli cihaz listesi ana is olsun.
+- [ ] Musteri/proje/paket/yetki modeli kodda kirilmadan kalsin, fakat UI'da kullanicinin onune ilk bariyer olarak cikmasin.
+- [ ] Gercek radar/kamera/RF cihaz baglantisi icin once backend kontrollu kesif/probe akisini kullan; secret, stream URL veya genis ag taramasi ekleme.
+- [x] Kamera snapshot, kisa olay klibi, alarm kaniti ve cihaz baglanti ayarlarini varsayilan olarak lokal backend makinesinde tut; bulut/storage entegrasyonunu opsiyonel ve sonradan yap.
+- [x] Olay verilerinde database'e ham goruntu yerine metadata ve lokal dosya referansi yazma stratejisini tasarla.
+- [x] Kamera feed icin backend snapshot capture endpointi ekle; real modda `snapshotUrl` backend'den okunup lokal evidence klasorune yazilsin, mock modda placeholder kanit uretilsin.
+- [x] Lokal kanit klasorunu env ile ayarlanabilir yap ve git disinda tut: `LOCAL_EVIDENCE_DIR`.
+- [x] Kamera/radar/RF verisi backend'e geldiginde kanit/metadata otomatik kaydedilsin; frontend manuel snapshot butonu gostermesin.
+- [x] Lokal sensor event store ekle; mock/gercek ingest sonucu uretilen kamera/radar/RF olaylarini typed event olarak backend'de tut.
+- [x] `/api/sensor-events` endpointi ekle; frontend olay panelinde event tipi, cihaz, severity ve lokal kanit referansini goster.
+- [x] Cihaz kaydinda kullanici sadece display name yazsin; `deviceType`, `productProfile` ve `capabilities` backend/discovery tarafindan belirlensin.
+- [x] Frontend cihaz kesfi kartinda algilanan cihaz tipi, urun profili ve analiz yeteneklerini goster; kullanicinin bunlari serbest metinle degistirmesine izin verme.
+- [x] Backend analiz pipeline taslagi olustur: kamera/termal icin snapshot-motion/object event, radar icin track/range/zone event, RF icin signal/frequency event.
+- [x] Mock data disinda gelecek gercek veriler icin `rawSource`, `ingestMode`, `capabilities` ve lokal evidence path alanlarini domain modeline hazirla.
+- [x] Gercek cihaz baglanmadan once lokal backend ingest akisini denemek icin frontend'de kamera/radar/RF test olayi ureten kontrol ekle; kamera olayinda snapshot kaniti backend tarafinda otomatik olussun, radar/RF olayinda metadata kaydi olussun.
+- [x] Radar/RF gibi goruntu uretmeyen sensor event'lerinde normalize metadata'yi lokal JSON evidence dosyasi olarak kaydet; event modelinde `dataPath` referansi goster.
+
+## En Oncelikli: Musteri/Paket/Yetki Modeli
+
+- [ ] Login sonrasi kullanicinin `customer`, `project/site`, `role`, `access group` ve paket yetkisini backend tarafinda hesaplayan modeli tasarla.
+- [x] `camera-thermal`, `rf-monitoring`, `radar-ops`, `full-ops` gibi product package tanimlarini domain modeline ekle.
+- [x] Paketlerin izin verdigi `allowedDeviceTypes` ve `allowedModules` alanlarini netlestir.
+- [x] Her musterinin sadece kendi proje/saha cihazlarini, camera feedlerini, alarmlarini ve verisini gorecegi veri izolasyonu kuralini uygula.
+- [x] Cok sayida viewer icin tek tek cihaz atamak yerine `access group` tabanli yetkilendirme tasarla.
+- [x] API response'larini kullanicinin effective access sonucuna gore filtrele; yetkisiz radar/RF/C2/kamera verisini client'a hic dondurme.
+- [ ] Frontend dashboardu backend'den gelen paket/modul yetkilerine gore sekillendir; satin alinmayan modulleri ekranda gosterme.
+- [ ] Database schema taslagina `customers`, `projects/sites`, `product_packages`, `modules`, `access_groups`, `group_memberships` ve ilgili iliskileri ekle.
+
 ## Kisa Vade
 
-- [x] UI-first MVP yaklasimini takip et: once gorunen demo, sonra backend/database.
+- [x] UI-first MVP yaklasimini takip et: once mock operasyon verisi, sonra backend/database.
 - [x] Vite + React + TypeScript projesi kur.
 - [x] Fluent UI veya benzer component library ekle.
 - [x] Ilk calisan dashboard ekranini ayaga kaldir.
@@ -19,6 +50,7 @@
 - [x] Basit harita/operasyon alani placeholder'i yap.
 - [x] Mock koordinatlarla marker ve menzil cemberi goster.
 - [x] Loading, empty, error ve success durumlarini goster.
+- [x] Otomatik kanit kaydi ve sensor event uretimi icin loading/error/success durumlarini backend event panelinde goster.
 - [x] Mobil/dar ekran icin responsive duzen ekle.
 
 ## RadarDesk MVP
@@ -35,7 +67,7 @@
 - [x] Alarm listesi severity filtresi ekle.
 - [x] Musteri/proje formu ekle.
 - [x] Harita ekrani icin teknoloji sec: Leaflet, Mapbox veya Google Maps.
-- [x] Backend calismasa bile demo icin mock veriden goruntu uret.
+- [x] Backend calismasa bile mock veriden operasyon gorunumu uret.
 
 ## JavaScript ve TypeScript Ogrenme
 
@@ -54,6 +86,13 @@
 - [x] Cihaz listesi icin mock API endpointi ekle.
 - [x] Alarm listesi icin mock API endpointi ekle.
 - [x] Proje listesi icin mock API endpointi ekle.
+- [x] Kamera dogrulama metadata'si icin mock API endpointi ekle.
+- [x] Satis oncesi lokal test icin backend tarafinda gercek kamera metadata provider hazirla; stream URL ve credential'lari client'a dondurme.
+- [x] `/api/camera-feeds/:id/snapshot` endpointi ekle; response sadece lokal kanit metadata'si dondursun, kamera URL/credential dondurmesin.
+- [x] Cihazlari onceden Kuzey/Guney gibi sabit adlarla tutmak yerine once kesfedilen cihaz listesinden sectir, sonra kullanicinin verdigi saha adiyla kaydet.
+- [ ] Gercek cihaz kesfi icin izinli IP araligi/port/protokol stratejisini dokumante et; rastgele veya genis ag taramasi yapma.
+- [x] Cihaz tipine gore analiz servisi secen backend mapping ekle: `thermal-camera`, `visible-camera`, `radar`, `rf-receiver`, `c2`.
+- [x] Analiz pipeline taslagindan mock sensor event ureten servis ekle; gercek ingest gelince ayni event sozlesmesini kullansin.
 - [x] Form kaydi icin API endpointi ekle.
 - [x] Input validation ekle.
 - [x] Hata cevap formatini standartlastir.
@@ -97,7 +136,8 @@
 - [ ] Migration araci sec.
 - [x] `.env.example` dosyasini ekle.
 - [ ] Ilk schema taslaginda hassas savunma verisi, gercek koordinat ve musteri dokumani saklama.
-- [ ] Seed verisini sadece mock/demo kayitlardan olustur.
+- [ ] Kamera/radar olay kayitlarinda ham medya dosyasini database'e gommek yerine lokal dosya yolu, hash, zaman ve cihaz referansi tut.
+- [ ] Seed verisini sadece mock egitim kayitlarindan olustur.
 - [ ] Database baglantisini sadece backend tarafinda kullanacak sekilde planla.
 - [ ] Migration komutlarini package scriptlerine eklemeden deploy akisini tamamlanmis sayma.
 
@@ -135,6 +175,7 @@
 - [ ] `README.md` dosyasini proje ilerledikce guncelle.
 - [ ] `docs/project-brief.md` dosyasini MVP kararlarina gore guncelle.
 - [ ] `docs/ai-guides/*` rehberlerini yeni ihtiyaclara gore guncelle.
+- [x] Yeni ozellik veya davranis degisikliginde once TODO ve ilgili `.md` dosyalarina karar notu yaz, sonra kodlamaya basla kuralini netlestir.
 - [ ] Yeni ozelliklerden sonra test ve dogrulama notlarini ekle.
 - [x] Frontend MVP tamamlanan ozellikleri ve kalan backend/database islerini README'de ayri bolumlerde listele.
 - [ ] Yeni backend baslangici icin kisa karar kaydi yaz: neden Express/Fastify secildi, hangi endpointler once gelecek.

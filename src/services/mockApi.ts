@@ -1,14 +1,22 @@
 import { alerts as mockAlerts } from '../mocks/alerts'
+import { cameraFeeds as mockCameraFeeds } from '../mocks/cameraFeeds'
+import { discoveredDevices as mockDiscoveredDevices } from '../mocks/discoveredDevices'
 import { devices as mockDevices } from '../mocks/devices'
 import { projects as mockProjects } from '../mocks/projects'
+import { sensorEvents as mockSensorEvents } from '../mocks/sensorEvents'
 import { users as mockUsers } from '../mocks/users'
-import type { Alert, Device, Project, User } from '../types/domain'
+import type { Alert, CameraFeed, Device, DiscoveredDevice, EffectiveAccess, Project, SensorEvent, User } from '../types/domain'
+import { getAccessScopedDashboardData, getEffectiveAccess } from './accessControl'
 
 export type MockDashboardData = {
   devices: Device[]
   alerts: Alert[]
   projects: Project[]
   users: User[]
+  cameraFeeds: CameraFeed[]
+  effectiveAccess: EffectiveAccess
+  discoveredDevices: DiscoveredDevice[]
+  sensorEvents: SensorEvent[]
 }
 
 export type ProjectSaveInput = Pick<Project, 'name' | 'customer' | 'site' | 'status'>
@@ -45,9 +53,38 @@ export async function fetchMockUsers(): Promise<User[]> {
   return getMockUsers()
 }
 
+export function getMockCameraFeeds(): CameraFeed[] {
+  return mockCameraFeeds.map((cameraFeed) => ({ ...cameraFeed }))
+}
+
+export async function fetchMockCameraFeeds(): Promise<CameraFeed[]> {
+  return getMockCameraFeeds()
+}
+
+export function getMockDiscoveredDevices(): DiscoveredDevice[] {
+  return mockDiscoveredDevices.map((device) => ({ ...device }))
+}
+
+export async function fetchMockDiscoveredDevices(): Promise<DiscoveredDevice[]> {
+  return getMockDiscoveredDevices()
+}
+
+export function getMockSensorEvents(): SensorEvent[] {
+  return mockSensorEvents.map((event) => ({
+    ...event,
+    evidence: event.evidence ? { ...event.evidence } : undefined,
+    metadata: { ...event.metadata },
+  }))
+}
+
+export async function fetchMockSensorEvents(): Promise<SensorEvent[]> {
+  return getMockSensorEvents()
+}
+
 export function saveMockProjectDraft(project: ProjectSaveInput): Project {
   return {
     id: 'project-draft-local',
+    customerId: 'customer-draft-local',
     name: project.name.trim(),
     customer: project.customer.trim(),
     site: project.site.trim(),
@@ -56,20 +93,29 @@ export function saveMockProjectDraft(project: ProjectSaveInput): Project {
 }
 
 export function getMockDashboardData(): MockDashboardData {
+  const scopedData = getAccessScopedDashboardData()
+
   return {
-    devices: getMockDevices(),
-    alerts: getMockAlerts(),
-    projects: getMockProjects(),
+    devices: scopedData.devices,
+    alerts: scopedData.alerts,
+    projects: scopedData.projects,
     users: getMockUsers(),
+    cameraFeeds: scopedData.cameraFeeds,
+    effectiveAccess: scopedData.effectiveAccess,
+    discoveredDevices: getMockDiscoveredDevices(),
+    sensorEvents: getMockSensorEvents(),
   }
 }
 
 export async function fetchMockDashboardData(): Promise<MockDashboardData> {
-  const [devices, alerts, projects, users] = await Promise.all([
+  const [devices, alerts, projects, users, cameraFeeds, discoveredDevices, sensorEvents] = await Promise.all([
     fetchMockDevices(),
     fetchMockAlerts(),
     fetchMockProjects(),
     fetchMockUsers(),
+    fetchMockCameraFeeds(),
+    fetchMockDiscoveredDevices(),
+    fetchMockSensorEvents(),
   ])
 
   return {
@@ -77,5 +123,9 @@ export async function fetchMockDashboardData(): Promise<MockDashboardData> {
     alerts,
     projects,
     users,
+    cameraFeeds,
+    effectiveAccess: getEffectiveAccess(),
+    discoveredDevices,
+    sensorEvents,
   }
 }
