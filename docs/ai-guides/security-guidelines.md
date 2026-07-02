@@ -12,6 +12,8 @@ Bu rehber; auth, API, veri, dosya islemleri, dashboard, musteri formlari ve savu
 - PDF ve is dokumanlari kullanici izni olmadan kopyalanmaz, upload edilmez, disari aktarilmaz.
 - Yetki kontrolu backend/API tarafinda yapilmalidir.
 - Ham medya database'e gomulmemelidir; metadata ve lokal dosya referansi tutulmalidir.
+- Cihaz baglantisini kaldirma islemi eski lokal evidence'i otomatik silmemelidir; silme ayri ve bilincli bir kullanici aksiyonu olmalidir.
+- Kayitli cihaz listesinden cihaz silme islemi, eski event/evidence verisini temizleyen bir veri imha islemi gibi uygulanmamalidir; evidence purge daha guclu onay ve audit gerektiren ayri bir akis olmalidir.
 
 ## Frontend Guvenligi
 
@@ -48,6 +50,7 @@ Bu rehber; auth, API, veri, dosya islemleri, dashboard, musteri formlari ve savu
 - Frontend'de modul gizlemek sadece UX davranisidir; gercek veri izolasyonu backend ve database sorgularinda saglanmalidir.
 - Cihaz kesfi endpointleri genis veya rastgele ag taramasi yapmamalidir; yalnizca acikca izin verilmis IP araligi, protokol ve timeout ile calismalidir.
 - Kesfedilen cihazlara kullanici tarafindan verilen adlar backend'de validate edilmeli; client'tan gelen `type`, `projectId`, `customerId`, rol veya yetki alanlari oldugu gibi kabul edilmemelidir.
+- Disconnect/reconnect endpointleri cihaz sahipligi ve proje baglamina gore backend'de kontrol edilmelidir; reconnect sirasinda credential, stream URL veya vendor protokol detayi client'a dondurulmemelidir.
 
 ## Backend Baslangic Guvenlik Taslagi
 

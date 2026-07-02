@@ -3,10 +3,12 @@ import {
   getAccessScopedDashboardData,
   getEffectiveAccess,
 } from '../../../src/services/accessControl'
-import { discoveredDevices as mockDiscoveredDevices } from '../../../src/mocks/discoveredDevices'
 import { registerDiscoveredDevice } from '../../../src/features/devices/deviceRegistration'
-import type { Alert, CameraFeed, Device, DiscoveredDevice, EffectiveAccess, Project, SensorEvent } from '../../../src/types/domain'
+import { buildIncidentsFromSensorEvents } from '../../../src/features/incidents/incidentCorrelation'
+import type { Alert, CameraFeed, Device, DiscoveredDevice, EffectiveAccess, Incident, Project, SensorEvent } from '../../../src/types/domain'
 import { getConfiguredCameraFeeds } from './cameraFeedProvider'
+import { getConfiguredDiscoveredDevices } from './deviceDiscoveryProvider'
+import { applyIncidentReviews, saveIncidentReview, type IncidentReviewInput } from './localIncidentReviewService'
 import { getLocalSensorEvents, ingestLocalSensorEvent, type SensorEventInput } from './localSensorEventService'
 
 export type ProjectDraftInput = Pick<Project, 'name' | 'customer' | 'site' | 'status'>
@@ -15,8 +17,16 @@ export type RegisterDeviceInput = {
   displayName: string
 }
 
+let registeredDevices: Device[] | null = null
+
 export function getDevices(userId = defaultMockUserId): Device[] {
-  return getAccessScopedDashboardData(userId).devices
+  const effectiveAccess = getEffectiveAccess(userId)
+  const allowedProjectIds = new Set(effectiveAccess.projectIds)
+  const allowedDeviceTypes = new Set(effectiveAccess.allowedDeviceTypes)
+
+  return getRegisteredDevices()
+    .filter((device) => allowedProjectIds.has(device.projectId) && allowedDeviceTypes.has(device.type))
+    .map((device) => ({ ...device, capabilities: [...device.capabilities] }))
 }
 
 export function getAlerts(userId = defaultMockUserId): Alert[] {
@@ -50,7 +60,7 @@ export function getDiscoveredDevices(userId = defaultMockUserId): DiscoveredDevi
   const effectiveAccess = getEffectiveAccess(userId)
   const allowedDeviceTypes = new Set(effectiveAccess.allowedDeviceTypes)
 
-  return mockDiscoveredDevices
+  return getConfiguredDiscoveredDevices()
     .filter((device) => allowedDeviceTypes.has(device.type))
     .map((device) => ({ ...device }))
 }
@@ -62,10 +72,36 @@ export function getSensorEvents(userId = defaultMockUserId): SensorEvent[] {
     .filter((event) => allowedDeviceIds.has(event.deviceId))
 }
 
-export async function createSensorEvent(input: SensorEventInput, userId = defaultMockUserId): Promise<SensorEvent | null> {
-  const allowedDeviceIds = new Set(getDevices(userId).map((device) => device.id))
+export function getIncidents(userId = defaultMockUserId): Incident[] {
+  const devices = getDevices(userId)
 
-  if (!allowedDeviceIds.has(input.deviceId)) {
+  return applyIncidentReviews(buildIncidentsFromSensorEvents(getSensorEvents(userId), devices))
+}
+
+export function updateIncidentReview(
+  incidentId: string,
+  input: IncidentReviewInput,
+  userId = defaultMockUserId,
+): Incident | null {
+  const incident = getIncidents(userId).find((candidate) => candidate.id === incidentId)
+
+  if (!incident) {
+    return null
+  }
+
+  saveIncidentReview(incidentId, input)
+
+  return getIncidents(userId).find((candidate) => candidate.id === incidentId) ?? null
+}
+
+export async function createSensorEvent(input: SensorEventInput, userId = defaultMockUserId): Promise<SensorEvent | null> {
+  const activeDeviceIds = new Set(
+    getDevices(userId)
+      .filter((device) => device.status !== 'offline')
+      .map((device) => device.id),
+  )
+
+  if (!activeDeviceIds.has(input.deviceId)) {
     return null
   }
 
@@ -94,7 +130,47 @@ export function createRegisteredDevice(input: RegisterDeviceInput, userId = defa
     project,
   })
 
-  return result.ok ? result.device : null
+  if (!result.ok) {
+    return null
+  }
+
+  upsertRegisteredDevice(result.device)
+
+  return result.device
+}
+
+export function disconnectRegisteredDevice(deviceId: string, userId = defaultMockUserId): Device | null {
+  const device = getDevices(userId).find((candidate) => candidate.id === deviceId)
+
+  if (!device) {
+    return null
+  }
+
+  const disconnectedDevice: Device = {
+    ...device,
+    status: 'offline',
+    lastSeen: 'baglanti kaldirildi',
+  }
+
+  upsertRegisteredDevice(disconnectedDevice)
+
+  return disconnectedDevice
+}
+
+export function deleteRegisteredDevice(deviceId: string, userId = defaultMockUserId): boolean {
+  const device = getDevices(userId).find((candidate) => candidate.id === deviceId)
+
+  if (!device) {
+    return false
+  }
+
+  registeredDevices = getRegisteredDevices().filter((candidate) => candidate.id !== deviceId)
+
+  return true
+}
+
+export function resetRegisteredDevicesForTests() {
+  registeredDevices = null
 }
 
 export function createProjectDraft(input: ProjectDraftInput): Project {
@@ -114,4 +190,31 @@ export function getRequestedMockUserId(value: unknown): string {
   }
 
   return value.trim() || defaultMockUserId
+}
+
+function getRegisteredDevices(): Device[] {
+  if (!registeredDevices) {
+    registeredDevices = getAccessScopedDashboardData(defaultMockUserId).devices.map((device) => ({
+      ...device,
+      capabilities: [...device.capabilities],
+    }))
+  }
+
+  return registeredDevices
+}
+
+function upsertRegisteredDevice(device: Device) {
+  const devices = getRegisteredDevices()
+  const existingDeviceIndex = devices.findIndex((candidate) => candidate.id === device.id)
+  const storedDevice = {
+    ...device,
+    capabilities: [...device.capabilities],
+  }
+
+  if (existingDeviceIndex === -1) {
+    registeredDevices = [...devices, storedDevice]
+    return
+  }
+
+  registeredDevices = devices.map((candidate, index) => (index === existingDeviceIndex ? storedDevice : candidate))
 }

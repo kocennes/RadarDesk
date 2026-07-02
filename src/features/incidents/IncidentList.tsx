@@ -1,0 +1,137 @@
+import { useState, type ChangeEvent } from 'react'
+import { Badge, Button, Card, CardHeader, Text, Textarea } from '@fluentui/react-components'
+import { ListState } from '../../components/ui/ListState'
+import type { AlertSeverity, Incident, IncidentConfirmationLevel, IncidentStatus } from '../../types/domain'
+import { formatDisplayTime } from '../../utils/formatters'
+
+type IncidentListProps = {
+  incidents: Incident[]
+  onReviewIncident: (
+    incident: Incident,
+    input: {
+      operatorNote?: string
+      status: IncidentStatus
+    },
+  ) => Promise<void>
+}
+
+const severityColor: Record<AlertSeverity, 'success' | 'warning' | 'danger' | 'subtle'> = {
+  critical: 'danger',
+  high: 'danger',
+  low: 'subtle',
+  medium: 'warning',
+}
+
+const statusLabel: Record<IncidentStatus, string> = {
+  confirmed: 'Dogrulandi',
+  dismissed: 'Kapatildi',
+  open: 'Acik',
+  reviewing: 'Incelemede',
+}
+
+const confirmationLabel: Record<IncidentConfirmationLevel, string> = {
+  'multi-sensor': 'Coklu sensor',
+  'operator-confirmed': 'Operator onayli',
+  'single-sensor': 'Tek sensor',
+}
+
+export function IncidentList({ incidents, onReviewIncident }: IncidentListProps) {
+  const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({})
+  const [pendingIncidentId, setPendingIncidentId] = useState<string>('')
+  const [errorMessage, setErrorMessage] = useState<string>('')
+
+  function handleNoteChange(incidentId: string, event: ChangeEvent<HTMLTextAreaElement>) {
+    setNoteDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [incidentId]: event.target.value,
+    }))
+  }
+
+  async function handleReview(incident: Incident, status: IncidentStatus) {
+    setPendingIncidentId(incident.id)
+    setErrorMessage('')
+
+    try {
+      await onReviewIncident(incident, {
+        operatorNote: noteDrafts[incident.id] ?? incident.operatorNote,
+        status,
+      })
+    } catch {
+      setErrorMessage('Incident incelemesi kaydedilemedi.')
+    } finally {
+      setPendingIncidentId('')
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        header={<Text weight="semibold">Olay dosyalari</Text>}
+        description={<Text size={200}>Birden fazla sensor kaydindan uretilen incident ozetleri</Text>}
+      />
+      <div className="stack">
+        {incidents.length === 0 ? (
+          <ListState message="Henuz incident yok" />
+        ) : (
+          <>
+            {incidents.map((incident) => {
+              const noteValue = noteDrafts[incident.id] ?? incident.operatorNote ?? ''
+              const isPending = pendingIncidentId === incident.id
+
+              return (
+                <article className="incident-row" key={incident.id}>
+                  <div className="incident-content">
+                    <div className="incident-summary">
+                      <div>
+                        <Text weight="semibold">{incident.title}</Text>
+                        <Text block className="muted" size={200}>
+                          {incident.sensorEventIds.length} event / {incident.sourceDeviceIds.length} cihaz /{' '}
+                          {formatDisplayTime(incident.updatedAt)}
+                        </Text>
+                        <Text block className="muted" size={200}>
+                          Guven: %{Math.round(incident.confidence * 100)} / {confirmationLabel[incident.confirmationLevel]} / Kanit:{' '}
+                          {incident.evidenceRefs.length}
+                        </Text>
+                      </div>
+                      <div className="incident-badges">
+                        <Badge color={severityColor[incident.severity]}>{incident.severity}</Badge>
+                        <Badge appearance="outline">{confirmationLabel[incident.confirmationLevel]}</Badge>
+                        <Badge appearance="outline">{statusLabel[incident.status]}</Badge>
+                      </div>
+                    </div>
+
+                    <Textarea
+                      aria-label={`${incident.title} operator notu`}
+                      maxLength={240}
+                      onChange={(event) => handleNoteChange(incident.id, event)}
+                      placeholder="Operator notu"
+                      resize="vertical"
+                      value={noteValue}
+                    />
+
+                    <div className="incident-actions">
+                      <Button disabled={isPending} onClick={() => void handleReview(incident, 'reviewing')}>
+                        Incele
+                      </Button>
+                      <Button disabled={isPending} onClick={() => void handleReview(incident, 'confirmed')}>
+                        Dogrula
+                      </Button>
+                      <Button disabled={isPending} onClick={() => void handleReview(incident, 'dismissed')}>
+                        Kapat
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              )
+            })}
+            {errorMessage ? (
+              <Text block className="form-error" size={200}>
+                {errorMessage}
+              </Text>
+            ) : null}
+          </>
+        )}
+      </div>
+    </Card>
+  )
+}

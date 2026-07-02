@@ -10,16 +10,22 @@ import { devices } from '../../src/mocks/devices'
 import { projects } from '../../src/mocks/projects'
 import { sensorEvents } from '../../src/mocks/sensorEvents'
 import { createApp } from './app'
+import { resetRegisteredDevicesForTests } from './services/mockDashboardService'
 
 const app = createApp()
 const originalCameraFeedSource = process.env.CAMERA_FEED_SOURCE
 const originalCameraFeedsJson = process.env.CAMERA_FEEDS_JSON
+const originalDeviceDiscoverySource = process.env.DEVICE_DISCOVERY_SOURCE
+const originalDeviceDiscoveryJson = process.env.DEVICE_DISCOVERY_JSON
 const originalLocalEvidenceDir = process.env.LOCAL_EVIDENCE_DIR
 
 afterEach(() => {
   setOptionalEnv('CAMERA_FEED_SOURCE', originalCameraFeedSource)
   setOptionalEnv('CAMERA_FEEDS_JSON', originalCameraFeedsJson)
+  setOptionalEnv('DEVICE_DISCOVERY_SOURCE', originalDeviceDiscoverySource)
+  setOptionalEnv('DEVICE_DISCOVERY_JSON', originalDeviceDiscoveryJson)
   setOptionalEnv('LOCAL_EVIDENCE_DIR', originalLocalEvidenceDir)
+  resetRegisteredDevicesForTests()
 })
 
 describe('RadarDesk API', () => {
@@ -41,6 +47,7 @@ describe('RadarDesk API', () => {
       accessResponse,
       discoveryResponse,
       sensorEventsResponse,
+      incidentsResponse,
     ] = await Promise.all([
       request(app).get('/api/devices').expect(200),
       request(app).get('/api/alerts').expect(200),
@@ -49,6 +56,7 @@ describe('RadarDesk API', () => {
       request(app).get('/api/access').expect(200),
       request(app).get('/api/device-discovery').expect(200),
       request(app).get('/api/sensor-events').expect(200),
+      request(app).get('/api/incidents').expect(200),
     ])
 
     expect(devicesResponse.body.data).toHaveLength(devices.length)
@@ -58,15 +66,18 @@ describe('RadarDesk API', () => {
     expect(accessResponse.body.data.packageIds).toContain('full-ops')
     expect(discoveryResponse.body.data).toHaveLength(discoveredDevices.length)
     expect(sensorEventsResponse.body.data).toHaveLength(sensorEvents.length)
+    expect(incidentsResponse.body.data.length).toBeGreaterThan(0)
+    expect(incidentsResponse.body.data[0].sensorEventIds.length).toBeGreaterThan(0)
   })
 
   it('filters API responses by effective access for a limited mock user', async () => {
-    const [devicesResponse, alertsResponse, cameraFeedsResponse, accessResponse, sensorEventsResponse] = await Promise.all([
+    const [devicesResponse, alertsResponse, cameraFeedsResponse, accessResponse, sensorEventsResponse, incidentsResponse] = await Promise.all([
       request(app).get('/api/devices').set('x-mock-user-id', 'user-viewer-001').expect(200),
       request(app).get('/api/alerts').set('x-mock-user-id', 'user-viewer-001').expect(200),
       request(app).get('/api/camera-feeds').set('x-mock-user-id', 'user-viewer-001').expect(200),
       request(app).get('/api/access').set('x-mock-user-id', 'user-viewer-001').expect(200),
       request(app).get('/api/sensor-events').set('x-mock-user-id', 'user-viewer-001').expect(200),
+      request(app).get('/api/incidents').set('x-mock-user-id', 'user-viewer-001').expect(200),
     ])
 
     expect(devicesResponse.body.data.map((device: { type: string }) => device.type)).toEqual(['eo-ir'])
@@ -80,6 +91,54 @@ describe('RadarDesk API', () => {
       packageIds: ['camera-thermal'],
     })
     expect(sensorEventsResponse.body.data.map((event: { deviceId: string }) => event.deviceId)).toEqual(['eo-003'])
+    expect(incidentsResponse.body.data[0].sourceDeviceIds).toEqual(['eo-003'])
+  })
+
+  it('updates incident review status and operator note locally', async () => {
+    const incidentsResponse = await request(app).get('/api/incidents').expect(200)
+    const incidentId = incidentsResponse.body.data[0].id
+
+    const response = await request(app)
+      .patch(`/api/incidents/${incidentId}/review`)
+      .send({
+        operatorNote: 'Goruntu ve radar kaydi birlikte incelendi.',
+        status: 'confirmed',
+      })
+      .expect(200)
+
+    expect(response.body.data).toMatchObject({
+      confirmationLevel: 'operator-confirmed',
+      id: incidentId,
+      operatorNote: 'Goruntu ve radar kaydi birlikte incelendi.',
+      status: 'confirmed',
+    })
+
+    const nextIncidentsResponse = await request(app).get('/api/incidents').expect(200)
+    expect(nextIncidentsResponse.body.data[0]).toMatchObject({
+      confirmationLevel: 'operator-confirmed',
+      id: incidentId,
+      operatorNote: 'Goruntu ve radar kaydi birlikte incelendi.',
+      status: 'confirmed',
+    })
+  })
+
+  it('rejects invalid incident review payloads', async () => {
+    const incidentsResponse = await request(app).get('/api/incidents').expect(200)
+    const incidentId = incidentsResponse.body.data[0].id
+
+    const response = await request(app)
+      .patch(`/api/incidents/${incidentId}/review`)
+      .send({
+        status: 'waiting',
+      })
+      .expect(400)
+
+    expect(response.body).toEqual({
+      error: {
+        code: 'invalid_incident_review',
+        message: 'Incident status is invalid.',
+      },
+    })
   })
 
   it('registers a discovered device with a user-provided display name', async () => {
@@ -99,6 +158,184 @@ describe('RadarDesk API', () => {
       customerId: 'customer-training',
       projectId: 'project-001',
     })
+  })
+
+  it('disconnects a registered device and stops later ingest for that device', async () => {
+    const disconnectResponse = await request(app).patch('/api/devices/radar-001/disconnect').expect(200)
+
+    expect(disconnectResponse.body.data).toMatchObject({
+      id: 'radar-001',
+      lastSeen: 'baglanti kaldirildi',
+      status: 'offline',
+    })
+
+    const devicesResponse = await request(app).get('/api/devices').expect(200)
+    expect(devicesResponse.body.data.find((device: { id: string }) => device.id === 'radar-001')).toMatchObject({
+      id: 'radar-001',
+      status: 'offline',
+    })
+
+    const ingestResponse = await request(app)
+      .post('/api/sensor-events/ingest')
+      .send({
+        deviceId: 'radar-001',
+        kind: 'radar-track',
+        metadata: {
+          rangeM: 380,
+          trackId: 'T-DISCONNECTED',
+        },
+        severity: 'medium',
+      })
+      .expect(404)
+
+    expect(ingestResponse.body).toEqual({
+      error: {
+        code: 'sensor_event_device_not_found',
+        message: 'Sensor event device could not be used.',
+      },
+    })
+  })
+
+  it('reconnects a disconnected discovered device with a new display name', async () => {
+    await request(app).patch('/api/devices/registered-discovered-camera-001/disconnect').expect(404)
+
+    await request(app)
+      .post('/api/devices/register')
+      .send({
+        discoveredDeviceId: 'discovered-camera-001',
+        displayName: 'Giris Kamera',
+      })
+      .expect(201)
+
+    await request(app).patch('/api/devices/registered-discovered-camera-001/disconnect').expect(200)
+
+    const reconnectResponse = await request(app)
+      .post('/api/devices/register')
+      .send({
+        discoveredDeviceId: 'discovered-camera-001',
+        displayName: 'Yeni Giris Kamera',
+      })
+      .expect(201)
+
+    expect(reconnectResponse.body.data).toMatchObject({
+      id: 'registered-discovered-camera-001',
+      name: 'Yeni Giris Kamera',
+      status: 'online',
+    })
+
+    const devicesResponse = await request(app).get('/api/devices').expect(200)
+    const reconnectedDevices = devicesResponse.body.data.filter(
+      (device: { id: string }) => device.id === 'registered-discovered-camera-001',
+    )
+
+    expect(reconnectedDevices).toHaveLength(1)
+    expect(reconnectedDevices[0]).toMatchObject({
+      name: 'Yeni Giris Kamera',
+      status: 'online',
+    })
+  })
+
+  it('deletes a registered device from the active device list', async () => {
+    await request(app).delete('/api/devices/radar-001').expect(204)
+
+    const devicesResponse = await request(app).get('/api/devices').expect(200)
+    expect(devicesResponse.body.data.map((device: { id: string }) => device.id)).not.toContain('radar-001')
+
+    const ingestResponse = await request(app)
+      .post('/api/sensor-events/ingest')
+      .send({
+        deviceId: 'radar-001',
+        kind: 'radar-track',
+        metadata: {
+          rangeM: 410,
+          trackId: 'T-DELETED',
+        },
+        severity: 'medium',
+      })
+      .expect(404)
+
+    expect(ingestResponse.body.error.code).toBe('sensor_event_device_not_found')
+  })
+
+  it('returns configured device discovery metadata without leaking backend-only fields', async () => {
+    process.env.DEVICE_DISCOVERY_SOURCE = 'config'
+    process.env.DEVICE_DISCOVERY_JSON = JSON.stringify([
+      {
+        id: 'configured-radar-001',
+        type: 'radar',
+        profile: 'radar',
+        capabilities: ['track-detection', 'range-monitoring', 'zone-alert'],
+        ingestMode: 'structured-events',
+        rawSource: 'network',
+        connectionType: 'network',
+        label: 'Lab Radar Node',
+        model: 'Generic Radar Node',
+        address: '192.0.2.31',
+        status: 'available',
+        detectedAt: '2026-07-02T10:22:00.000Z',
+        streamUrl: 'rtsp://user:password@radar-host/live',
+        credential: 'secret-password',
+      },
+    ])
+
+    const response = await request(app).get('/api/device-discovery').expect(200)
+
+    expect(response.body.data).toEqual([
+      {
+        id: 'configured-radar-001',
+        type: 'radar',
+        profile: 'radar',
+        capabilities: ['track-detection', 'range-monitoring', 'zone-alert'],
+        ingestMode: 'structured-events',
+        rawSource: 'network',
+        connectionType: 'network',
+        label: 'Lab Radar Node',
+        model: 'Generic Radar Node',
+        address: '192.0.2.31',
+        status: 'available',
+        detectedAt: '2026-07-02T10:22:00.000Z',
+      },
+    ])
+    expect(JSON.stringify(response.body.data)).not.toContain('secret-password')
+    expect(JSON.stringify(response.body.data)).not.toContain('rtsp://')
+  })
+
+  it('filters configured discovery devices by effective access', async () => {
+    process.env.DEVICE_DISCOVERY_SOURCE = 'config'
+    process.env.DEVICE_DISCOVERY_JSON = JSON.stringify([
+      {
+        id: 'configured-camera-001',
+        type: 'eo-ir',
+        profile: 'thermal-camera',
+        capabilities: ['snapshot', 'thermal-frame', 'motion-event'],
+        ingestMode: 'snapshot',
+        rawSource: 'network',
+        connectionType: 'network',
+        label: 'Lab Thermal Camera',
+        model: 'Generic EO/IR Camera',
+        address: '192.0.2.21',
+        status: 'available',
+        detectedAt: '2026-07-02T10:20:00.000Z',
+      },
+      {
+        id: 'configured-radar-001',
+        type: 'radar',
+        profile: 'radar',
+        capabilities: ['track-detection'],
+        ingestMode: 'structured-events',
+        rawSource: 'network',
+        connectionType: 'network',
+        label: 'Lab Radar Node',
+        model: 'Generic Radar Node',
+        address: '192.0.2.31',
+        status: 'available',
+        detectedAt: '2026-07-02T10:22:00.000Z',
+      },
+    ])
+
+    const response = await request(app).get('/api/device-discovery').set('x-mock-user-id', 'user-viewer-001').expect(200)
+
+    expect(response.body.data.map((device: { id: string }) => device.id)).toEqual(['configured-camera-001'])
   })
 
   it('rejects invalid discovered device registration payloads', async () => {

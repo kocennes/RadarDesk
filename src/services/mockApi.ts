@@ -5,7 +5,8 @@ import { devices as mockDevices } from '../mocks/devices'
 import { projects as mockProjects } from '../mocks/projects'
 import { sensorEvents as mockSensorEvents } from '../mocks/sensorEvents'
 import { users as mockUsers } from '../mocks/users'
-import type { Alert, CameraFeed, Device, DiscoveredDevice, EffectiveAccess, Project, SensorEvent, User } from '../types/domain'
+import type { Alert, CameraFeed, Device, DiscoveredDevice, EffectiveAccess, Incident, Project, SensorEvent, User } from '../types/domain'
+import { buildIncidentsFromSensorEvents } from '../features/incidents/incidentCorrelation'
 import { getAccessScopedDashboardData, getEffectiveAccess } from './accessControl'
 
 export type MockDashboardData = {
@@ -17,6 +18,7 @@ export type MockDashboardData = {
   effectiveAccess: EffectiveAccess
   discoveredDevices: DiscoveredDevice[]
   sensorEvents: SensorEvent[]
+  incidents: Incident[]
 }
 
 export type ProjectSaveInput = Pick<Project, 'name' | 'customer' | 'site' | 'status'>
@@ -81,6 +83,14 @@ export async function fetchMockSensorEvents(): Promise<SensorEvent[]> {
   return getMockSensorEvents()
 }
 
+export function getMockIncidents(): Incident[] {
+  return buildIncidentsFromSensorEvents(getMockSensorEvents(), getMockDevices())
+}
+
+export async function fetchMockIncidents(): Promise<Incident[]> {
+  return getMockIncidents()
+}
+
 export function saveMockProjectDraft(project: ProjectSaveInput): Project {
   return {
     id: 'project-draft-local',
@@ -104,6 +114,7 @@ export function getMockDashboardData(): MockDashboardData {
     effectiveAccess: scopedData.effectiveAccess,
     discoveredDevices: getMockDiscoveredDevices(),
     sensorEvents: getMockSensorEvents(),
+    incidents: buildIncidentsFromSensorEvents(getMockSensorEvents(), scopedData.devices),
   }
 }
 
@@ -127,5 +138,6 @@ export async function fetchMockDashboardData(): Promise<MockDashboardData> {
     effectiveAccess: getEffectiveAccess(),
     discoveredDevices,
     sensorEvents,
+    incidents: buildIncidentsFromSensorEvents(sensorEvents, devices),
   }
 }

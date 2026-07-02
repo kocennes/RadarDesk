@@ -55,7 +55,9 @@ The first RadarDesk screen is a React + TypeScript dashboard powered by mock dat
 
 The immediate product flow is local single-user device setup, not a full admin panel. The first screen should help a user connect or discover whatever devices they have available, select a detected camera/radar/RF device, give it a field name, and see it in the device list.
 
-Customer, package, role, and access-group modeling can stay in the codebase for later, but it should not block the first setup experience.
+For the local-first product experience, assume the user has the full local operations package. The UI should not hide major panels because of package/module entitlements. Instead, panels should become useful as devices are connected: if no camera is connected, the camera/evidence panel can show an empty state; if a radar or RF receiver is connected, the matching data pipeline and panels should become active.
+
+Customer, package, role, and access-group modeling can stay in the codebase for later enterprise/admin work, but it should not block or shape the first setup experience.
 
 ## Local-First Data Policy
 
@@ -71,13 +73,16 @@ Do not send camera frames, thermal snapshots, radar traces, or RF captures to th
 
 RadarDesk should grow as a customer/project based admin panel. A customer may buy the same package as another customer, but each customer still uses only their own devices, camera feeds, alerts, stream configuration, and project data.
 
+Important current decision: this model is not the first local product gate. In the first local setup flow, all operational modules are available and the active device connections decide what data appears. Package/module restrictions should return later when the app grows into a customer/admin sales model.
+
 Planned model:
 
-- Product package decides which modules and device types are visible.
+- Product package can decide which modules and device types are visible in the later enterprise/admin model.
 - Project/site decides which real devices belong to the customer.
 - Access group decides what many users, especially viewers, can access.
 - Role decides what the user can do: admin, operator, viewer.
 - Backend must filter API responses by the user's effective access; frontend hiding is only UX.
+- In local setup mode, frontend should prefer device-driven empty/active states over hiding whole panels by `allowedModules`.
 
 Example packages:
 
@@ -97,6 +102,7 @@ The first backend slice is a Node.js + TypeScript + Express API that still uses 
 - `GET /api/projects`
 - `GET /api/camera-feeds`
 - `GET /api/sensor-events`
+- `GET /api/incidents`
 - `GET /api/access`
 - `POST /api/devices/register`
 - `POST /api/camera-feeds/:id/snapshot`
@@ -122,6 +128,18 @@ Device records should not be hard-coded as fixed field labels such as north, sou
 
 Real network discovery must be added carefully. Do not run broad or random network scans from the app. Use an explicitly configured and approved IP range, protocol, timeout, and environment mode before probing real devices.
 
+The first real-device step is controlled config discovery, not active scanning. When `DEVICE_DISCOVERY_SOURCE=config`, the backend reads `DEVICE_DISCOVERY_JSON`, validates each entry against the allowed device/profile/capability model, filters by effective access, and returns only safe metadata from `/api/device-discovery`. Secrets, stream URLs, credentials, and low-level protocol details must stay out of this response.
+
+Connected device lifecycle:
+
+- A registered device should represent an active local connection or configured local source.
+- The user must be able to disconnect a registered device without deleting historical local evidence.
+- After disconnect, the backend should stop ingesting or generating new events for that device.
+- The user must also be able to delete a registered device from the active device list when replacing it with another physical device.
+- Device deletion removes the registered-device entry, but it must not purge old evidence or incident history unless a separate evidence cleanup action is explicitly added later.
+- The same physical device should be reconnectable later from discovery/config without a fragile manual cleanup step.
+- Reconnect should allow keeping the old display name or entering a new field name.
+
 ## Device Profiles And Analysis Pipelines
 
 The user can freely choose the device display name, but the device type, product profile, and analysis capabilities must come from backend discovery/configuration. A user may name a device `Arka Bahce`, but they should not be able to turn a camera into a radar or RF receiver from the UI.
@@ -141,6 +159,35 @@ Analysis should be selected by device profile:
 - RF pipeline reads signal/frequency data, evaluates band/anomaly rules, and creates an alert with signal metadata.
 
 Real incoming data should be normalized at the backend boundary into typed events before the frontend sees it.
+
+## Real Product Research Direction
+
+Recent product research points RadarDesk toward a multi-sensor operations model rather than a camera-only dashboard. Public C-UAS and perimeter-security products commonly combine radar, RF sensing, EO/IR cameras, and a C2/dashboard layer so operators can detect, track, visually confirm, and review evidence from one screen.
+
+Useful public references:
+
+- Dedrone: AI-driven C2 and multi-sensor drone defense with RF, radar, and camera integration: https://www.dedrone.com/
+- DedroneTrailer: mobile layered detection with RF, PTZ camera, and radar coverage: https://www.dedrone.com/solutions/dedrone-trailer
+- DroneShield fixed-site systems: modular C-UAS, RF sensing, AI, sensor fusion, and fixed-site/on-prem style deployments: https://www.droneshield.com/products-fixed-site
+- L3Harris Drone Guardian: correlates radar, RF, EO/IR, acoustic, and other sensor inputs to lower operator burden: https://www.l3harris.com/all-capabilities/drone-guardian-counter-suas
+- Teledyne FLIR Defense C-UAS: combines ground surveillance radar, EO/IR cameras, RF detection, and AI analytics: https://defense.flir.com/integrated-solutions/counter-uas/
+- Senstar sensor fusion note: combines simultaneous inputs from different sensors for higher-fidelity security signals: https://senstar.com/security-digest/sensor-fusion-the-next-generation-of-perimeter-security/
+
+Product implication for RadarDesk:
+
+- `SensorEvent` remains the low-level normalized event from one source.
+- `Incident` or `CorrelatedEvent` should become the higher-level operator object.
+- One incident can contain camera snapshot/clip evidence, radar JSON evidence, RF JSON evidence, severity, confidence, review status, and operator notes.
+- False alarm reduction should come from sensor fusion: a radar-only event, RF-only event, and camera-confirmed multi-sensor incident should not be treated as the same confidence level.
+- Cloud sync can be added later, but local/on-prem evidence storage stays the default.
+
+Initial implementation rule: derive `Incident` summaries from local `SensorEvent` records before adding a database table. The first correlation can group events by project/site and a short time bucket, then expose the result through `/api/incidents` for the frontend incident panel. Incident review status and short operator notes can be stored as a local backend overlay until a real database is introduced.
+
+False alarm handling starts with three confirmation levels:
+
+- `single-sensor`: one sensor type produced the incident candidate; keep it open with lower confidence.
+- `multi-sensor`: two or more sensor types support the same time/project bucket; raise confidence and move it to review.
+- `operator-confirmed`: an operator explicitly confirms the incident after checking evidence.
 
 ## Local Sensor Events
 
@@ -194,7 +241,7 @@ npm.cmd run server:typecheck
 ```
 
 Current result: test suite, frontend build, and server typecheck pass.
-Latest local run: 13 test files and 62 tests pass, frontend build passes, and server typecheck passes.
+Latest local run: 14 test files and 77 tests pass, frontend build passes, and server typecheck passes.
 Coverage summary from the last coverage run: 98.42% statements, 95.08% branches, 95.83% functions, and 98.34% lines.
 
 ## Remaining Work

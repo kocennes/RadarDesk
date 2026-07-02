@@ -4,6 +4,8 @@ import type {
   Device,
   DiscoveredDevice,
   EffectiveAccess,
+  Incident,
+  IncidentStatus,
   Project,
   AlertSeverity,
   SensorEvent,
@@ -14,6 +16,7 @@ import {
   fetchMockDashboardData,
   fetchMockCameraFeeds,
   fetchMockDiscoveredDevices,
+  fetchMockIncidents,
   fetchMockSensorEvents,
   fetchMockUsers,
   saveMockProjectDraft,
@@ -33,13 +36,19 @@ export type SensorEventIngestInput = {
   cameraFeedId?: string
 }
 
+export type IncidentReviewUpdateInput = {
+  incident: Incident
+  operatorNote?: string
+  status: IncidentStatus
+}
+
 export async function fetchDashboardData(apiBaseUrl = getApiBaseUrl()): Promise<MockDashboardData> {
   if (!apiBaseUrl) {
     return fetchMockDashboardData()
   }
 
   const mockDashboardData = await fetchMockDashboardData()
-  const [devices, alerts, projects, users, cameraFeeds, effectiveAccess, discoveredDevices, sensorEvents] = await Promise.all([
+  const [devices, alerts, projects, users, cameraFeeds, effectiveAccess, discoveredDevices, sensorEvents, incidents] = await Promise.all([
     fetchApiData<Device[]>(apiBaseUrl, '/api/devices'),
     fetchApiData<Alert[]>(apiBaseUrl, '/api/alerts'),
     fetchApiData<Project[]>(apiBaseUrl, '/api/projects'),
@@ -48,6 +57,7 @@ export async function fetchDashboardData(apiBaseUrl = getApiBaseUrl()): Promise<
     fetchApiData<EffectiveAccess>(apiBaseUrl, '/api/access').catch(() => mockDashboardData.effectiveAccess),
     fetchApiData<DiscoveredDevice[]>(apiBaseUrl, '/api/device-discovery').catch(() => fetchMockDiscoveredDevices()),
     fetchApiData<SensorEvent[]>(apiBaseUrl, '/api/sensor-events').catch(() => fetchMockSensorEvents()),
+    fetchApiData<Incident[]>(apiBaseUrl, '/api/incidents').catch(() => fetchMockIncidents()),
   ])
 
   return {
@@ -59,6 +69,7 @@ export async function fetchDashboardData(apiBaseUrl = getApiBaseUrl()): Promise<
     effectiveAccess,
     discoveredDevices,
     sensorEvents,
+    incidents,
   }
 }
 
@@ -76,6 +87,58 @@ export async function ingestSensorEvent(
       'Content-Type': 'application/json',
     },
     method: 'POST',
+  })
+}
+
+export async function updateIncidentReview(
+  input: IncidentReviewUpdateInput,
+  apiBaseUrl = getApiBaseUrl(),
+): Promise<Incident> {
+  const body = {
+    operatorNote: input.operatorNote,
+    status: input.status,
+  }
+
+  if (!apiBaseUrl) {
+    return {
+      ...input.incident,
+      confirmationLevel: input.status === 'confirmed' ? 'operator-confirmed' : input.incident.confirmationLevel,
+      operatorNote: input.operatorNote?.trim() || undefined,
+      status: input.status,
+      updatedAt: new Date().toISOString(),
+    }
+  }
+
+  return fetchApiData<Incident>(apiBaseUrl, `/api/incidents/${input.incident.id}/review`, {
+    body: JSON.stringify(body),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'PATCH',
+  })
+}
+
+export async function disconnectDevice(device: Device, apiBaseUrl = getApiBaseUrl()): Promise<Device> {
+  if (!apiBaseUrl) {
+    return {
+      ...device,
+      status: 'offline',
+      lastSeen: 'baglanti kaldirildi',
+    }
+  }
+
+  return fetchApiData<Device>(apiBaseUrl, `/api/devices/${device.id}/disconnect`, {
+    method: 'PATCH',
+  })
+}
+
+export async function deleteDevice(deviceId: string, apiBaseUrl = getApiBaseUrl()): Promise<void> {
+  if (!apiBaseUrl) {
+    return
+  }
+
+  await fetchApiNoContent(apiBaseUrl, `/api/devices/${deviceId}`, {
+    method: 'DELETE',
   })
 }
 
@@ -177,6 +240,14 @@ async function fetchApiData<T>(apiBaseUrl: string, path: string, init?: RequestI
   const body = (await response.json()) as ApiDataResponse<T>
 
   return body.data
+}
+
+async function fetchApiNoContent(apiBaseUrl: string, path: string, init?: RequestInit): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}${path}`, init)
+
+  if (!response.ok) {
+    throw new Error('API request failed.')
+  }
 }
 
 function getApiBaseUrl(): string {

@@ -1,4 +1,4 @@
-import { Badge, Field, Input, Select, Text } from '@fluentui/react-components'
+import { Badge, Button, Field, Input, Select, Text, Tooltip } from '@fluentui/react-components'
 import type { ChangeEvent } from 'react'
 import type { Device, DeviceStatus } from '../../types/domain'
 import { ListState } from '../../components/ui/ListState'
@@ -22,17 +22,43 @@ const deviceStatusLabel: Record<DeviceStatusFilter, string> = {
   offline: 'Offline',
 }
 
+function getDeviceStatusDescription(device: Device): string {
+  if (device.status === 'warning' && device.profile === 'rf-receiver') {
+    return 'Uyari: RF alici mock akisinda beklenen sinyal esiginin disinda aktivite goruldu. Bu durum kisa sureli parazit, yeni bir frekans olayi veya sinyal siniflandirma belirsizligi olabilir; operator incelemesi gerekir.'
+  }
+
+  if (device.status === 'warning') {
+    return 'Uyari: Cihaz veri akisinda normal disi ama kritik olmayan bir durum var. Baglanti kalitesi, son event ve cihaz sagligi kontrol edilmeli.'
+  }
+
+  if (device.status === 'alarm') {
+    return 'Alarm: Cihazdan kritik olay geldi. Ilgili alarm ve kanit kayitlari operator tarafindan incelenmeli.'
+  }
+
+  if (device.status === 'offline') {
+    return 'Offline: Cihazdan yeni veri alinmiyor. Baglanti kaldirilmis, ag erisimi kesilmis veya kaynak pasif olabilir.'
+  }
+
+  return 'Online: Cihaz aktif gorunuyor ve son veri zamani normal aralikta.'
+}
+
 export type DeviceListProps = {
   devices: Device[]
   searchTerm: string
   statusFilter: DeviceStatusFilter
   viewMode: DashboardViewMode
+  actionDeviceId?: string
+  onDeleteDevice: (device: Device) => void
+  onDisconnectDevice: (device: Device) => void
   onSearchTermChange: (value: string) => void
   onStatusFilterChange: (status: DeviceStatusFilter) => void
 }
 
 export function DeviceList({
   devices,
+  actionDeviceId,
+  onDeleteDevice,
+  onDisconnectDevice,
   onSearchTermChange,
   onStatusFilterChange,
   searchTerm,
@@ -91,7 +117,32 @@ export function DeviceList({
                 {profileLabel[device.profile]} / {ingestModeLabel[device.ingestMode]} / {formatCapabilities(device.capabilities)}
               </Text>
             </div>
-            <Badge color={deviceStatusColor[device.status]}>{deviceStatusLabel[device.status]}</Badge>
+            <div className="device-row-actions">
+              <Tooltip content={getDeviceStatusDescription(device)} relationship="description">
+                <span className="status-badge-with-info" tabIndex={0}>
+                  <Badge color={deviceStatusColor[device.status]}>{deviceStatusLabel[device.status]}</Badge>
+                </span>
+              </Tooltip>
+              <div className="device-action-buttons">
+                <Button
+                  appearance="secondary"
+                  disabled={actionDeviceId === device.id || device.status === 'offline'}
+                  size="small"
+                  onClick={() => onDisconnectDevice(device)}
+                >
+                  Baglantiyi kaldir
+                </Button>
+                <Button
+                  appearance="secondary"
+                  className="danger-button"
+                  disabled={actionDeviceId === device.id}
+                  size="small"
+                  onClick={() => onDeleteDevice(device)}
+                >
+                  Cihazi sil
+                </Button>
+              </div>
+            </div>
           </div>
         ))
       )}

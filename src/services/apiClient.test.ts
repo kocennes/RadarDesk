@@ -5,7 +5,16 @@ import { discoveredDevices } from '../mocks/discoveredDevices'
 import { devices } from '../mocks/devices'
 import { projects } from '../mocks/projects'
 import { sensorEvents } from '../mocks/sensorEvents'
-import { fetchDashboardData, ingestSensorEvent, registerDeviceFromDiscovery, saveProjectDraft } from './apiClient'
+import { buildIncidentsFromSensorEvents } from '../features/incidents/incidentCorrelation'
+import {
+  deleteDevice,
+  disconnectDevice,
+  fetchDashboardData,
+  ingestSensorEvent,
+  registerDeviceFromDiscovery,
+  saveProjectDraft,
+  updateIncidentReview,
+} from './apiClient'
 
 describe('apiClient', () => {
   afterEach(() => {
@@ -21,6 +30,7 @@ describe('apiClient', () => {
     expect(dashboardData.cameraFeeds).toHaveLength(cameraFeeds.length)
     expect(dashboardData.discoveredDevices).toHaveLength(discoveredDevices.length)
     expect(dashboardData.sensorEvents).toHaveLength(sensorEvents.length)
+    expect(dashboardData.incidents.length).toBeGreaterThan(0)
   })
 
   it('loads dashboard lists from the configured API base URL', async () => {
@@ -65,18 +75,23 @@ describe('apiClient', () => {
         return jsonResponse({ data: sensorEvents })
       }
 
+      if (url.endsWith('/api/incidents')) {
+        return jsonResponse({ data: buildIncidentsFromSensorEvents(sensorEvents, devices) })
+      }
+
       return jsonResponse({ data: [] }, false)
     })
 
     const dashboardData = await fetchDashboardData('http://localhost:4000')
 
-    expect(fetchMock).toHaveBeenCalledTimes(7)
+    expect(fetchMock).toHaveBeenCalledTimes(8)
     expect(dashboardData.devices).toHaveLength(devices.length)
     expect(dashboardData.alerts).toHaveLength(alerts.length)
     expect(dashboardData.projects).toHaveLength(projects.length)
     expect(dashboardData.cameraFeeds).toHaveLength(cameraFeeds.length)
     expect(dashboardData.discoveredDevices).toHaveLength(discoveredDevices.length)
     expect(dashboardData.sensorEvents).toHaveLength(sensorEvents.length)
+    expect(dashboardData.incidents.length).toBeGreaterThan(0)
   })
 
   it('registers a discovered device through the configured API base URL', async () => {
@@ -214,6 +229,117 @@ describe('apiClient', () => {
       },
       kind: 'radar-track',
       severity: 'medium',
+    })
+  })
+
+  it('updates incident reviews through the configured API base URL', async () => {
+    const incident = buildIncidentsFromSensorEvents(sensorEvents, devices)[0]
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse({
+        data: {
+          ...incident,
+          confirmationLevel: 'operator-confirmed',
+          operatorNote: 'Incelendi.',
+          status: 'confirmed',
+          updatedAt: '2026-07-02T10:40:00.000Z',
+        },
+      }),
+    )
+
+    const updatedIncident = await updateIncidentReview(
+      {
+        incident,
+        operatorNote: 'Incelendi.',
+        status: 'confirmed',
+      },
+      'http://localhost:4000',
+    )
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `http://localhost:4000/api/incidents/${incident.id}/review`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          operatorNote: 'Incelendi.',
+          status: 'confirmed',
+        }),
+        method: 'PATCH',
+      }),
+    )
+    expect(updatedIncident).toMatchObject({
+      confirmationLevel: 'operator-confirmed',
+      id: incident.id,
+      operatorNote: 'Incelendi.',
+      status: 'confirmed',
+    })
+  })
+
+  it('updates incident reviews with the mock fallback when no API base URL is configured', async () => {
+    const incident = buildIncidentsFromSensorEvents(sensorEvents, devices)[0]
+
+    const updatedIncident = await updateIncidentReview(
+      {
+        incident,
+        operatorNote: '  Yerel inceleme notu  ',
+        status: 'dismissed',
+      },
+      '',
+    )
+
+    expect(updatedIncident).toMatchObject({
+      confirmationLevel: 'multi-sensor',
+      id: incident.id,
+      operatorNote: 'Yerel inceleme notu',
+      status: 'dismissed',
+    })
+  })
+
+  it('disconnects devices through the configured API base URL', async () => {
+    const device = devices[0]
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse({
+        data: {
+          ...device,
+          lastSeen: 'baglanti kaldirildi',
+          status: 'offline',
+        },
+      }),
+    )
+
+    const disconnectedDevice = await disconnectDevice(device, 'http://localhost:4000')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `http://localhost:4000/api/devices/${device.id}/disconnect`,
+      expect.objectContaining({
+        method: 'PATCH',
+      }),
+    )
+    expect(disconnectedDevice).toMatchObject({
+      id: device.id,
+      lastSeen: 'baglanti kaldirildi',
+      status: 'offline',
+    })
+  })
+
+  it('deletes devices through the configured API base URL', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({}, true))
+
+    await deleteDevice('radar-001', 'http://localhost:4000')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/devices/radar-001',
+      expect.objectContaining({
+        method: 'DELETE',
+      }),
+    )
+  })
+
+  it('disconnects devices with the mock fallback when no API base URL is configured', async () => {
+    const disconnectedDevice = await disconnectDevice(devices[0], '')
+
+    expect(disconnectedDevice).toMatchObject({
+      id: devices[0].id,
+      lastSeen: 'baglanti kaldirildi',
+      status: 'offline',
     })
   })
 

@@ -19,6 +19,7 @@
   "include": [
     "server/src",
     "src/features/devices/deviceRegistration.ts",
+    "src/features/incidents/incidentCorrelation.ts",
     "src/mocks",
     "src/services/accessControl.ts",
     "src/types"

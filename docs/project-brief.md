@@ -10,7 +10,9 @@ Kullanicinin webci olarak gelismesi icin once temel dil bilgisi, sonra React + T
 
 Ilk calisan urun deneyimi admin panel degil, lokal tek kullanici cihaz kurulumudur. Kullanici uygulamayi actiginda once elindeki radar, kamera, RF alicisi veya diger cihazi baglayabilmeli/kesfedebilmeli, listeden secebilmeli ve kendi verdigi adla kaydedebilmelidir.
 
-Musteri, paket, rol ve access group modeli daha sonra kurumsal/admin yapiya geciste kullanilacak; simdilik ilk ekranin on kosulu olmamalidir.
+Musteri, paket, rol ve access group modeli daha sonra kurumsal/admin yapiya geciste kullanilacak; simdilik ilk ekranin on kosulu olmamalidir. Lokal ilk urun deneyiminde tum operasyon modulleri kullanicinin paketinde var kabul edilir. Ekranin dolu veya bos olmasini satin alma paketi degil, bagli cihazlar belirler.
+
+Ornek: kamera yoksa kamera paneli bos durum gosterir; radar baglaninca radar event/incident akisi aktif olur; RF alicisi baglaninca RF event/incident akisi gorunur. Kullaniciya ilk kurulumda "bu modul paketinde yok" bariyeri cikarilmaz.
 
 ## Lokal Veri Saklama Karari
 
@@ -41,6 +43,8 @@ Bu uygulama gercek hassas sistemlere baglanmadan once sahte/mock veriyle gelisti
 
 RadarDesk ileride tek tip ekran olarak degil, musteri/proje bazli kurulan bir admin panel olarak dusunulmelidir.
 
+Bu karar kurumsal/admin asama icindir. Lokal ilk urun asamasinda paket/modul kisitlari birincil davranis degildir; kullanici kendi makinesine hangi cihazi bagladiysa o cihaz ve uretilen veriler gorunmelidir. Paket bazli ekran kisitlama daha sonra satis/kurumsal musteri modeline gecince tekrar ele alinacaktir.
+
 Temel kararlar:
 
 - Her musteri kendi proje/saha kurulumundaki cihazlari gorur.
@@ -60,7 +64,7 @@ radar-ops      -> radar, radar alarm/iz bilgisi, menzil gosterimi
 full-ops       -> radar, RF, EO/IR, C2 ve tum operasyon dashboardu
 ```
 
-Login sonrasi hedef davranis:
+Kurumsal/admin asamaya gecildiginde hedef davranis:
 
 1. Kullanici kimligi backend tarafinda dogrulanir.
 2. Backend kullanicinin customer, project/site, role, access group ve paket yetkilerini hesaplar.
@@ -80,6 +84,18 @@ Hedef akis:
 5. Backend bu adi validate eder ve cihaz kaydina display name olarak yazar.
 
 Gercek ag kesfi baslamadan once izinli IP araligi, protokol, timeout, loglama ve ortam modu netlestirilmelidir. Uygulama genis/rastgele ag taramasi yapmamalidir.
+
+Ilk gercek cihaz adimi aktif ag taramasi degildir. Backend `DEVICE_DISCOVERY_SOURCE=config` modunda `DEVICE_DISCOVERY_JSON` ile verilen kamera/radar/RF cihaz adaylarini okur, tip/profil/yetenek alanlarini validate eder ve frontend'e yalnizca guvenli metadata dondurur. Secret, stream URL, credential veya vendor protokol detayi discovery response'una eklenmez.
+
+Bagli cihaz yasam dongusu:
+
+1. Kullanici kesfedilen/config edilen cihazi secer.
+2. Cihaza kendi saha adini verir.
+3. Backend cihazi aktif kayitli cihaz yapar ve profil/yeteneklerine gore veri islemeye baslar.
+4. Kullanici isterse baglantiyi kaldirir; cihaz artik yeni event/kanit uretmez, fakat eski lokal evidence silinmez.
+5. Kullanici cihaz yerine baska bir cihaz takacaksa kayitli cihaz girdisini tamamen silebilir; bu islem aktif cihaz listesini temizler, eski evidence/incident gecmisini otomatik silmez.
+6. Ayni fiziksel cihaz daha sonra tekrar kesfedilip sorunsuz baglanabilir.
+7. Tekrar baglama sirasinda eski display name korunabilir veya yeni ad verilebilir.
 
 ## Cihaz Profili ve Analiz Pipeline Karari
 
@@ -101,6 +117,42 @@ Backend cihazin profilini bildigi icin analiz pipeline'ini buna gore secer:
 - C2 verisi cihazlarin birlesik durumu ve komut akisi olarak ele alinir.
 
 Frontend bu profili ve yetenekleri gosterir, fakat kullanicinin kritik tipi serbestce degistirmesine izin vermez.
+
+## Gercek Urun Arastirmasi Sonucu
+
+2026-07-02 tarihinde incelenen acik kaynakli urun sayfalari ve sektor notlari, RadarDesk'in kamera-only bir panel yerine multi-sensor operasyon paneli olarak dusunulmesi gerektigini gosterdi.
+
+Ortak urun deseni:
+
+- Radar erken tespit ve track uretir.
+- RF alicisi sinyal/frekans/bant aktivitesi uretir.
+- EO/IR kamera gorsel veya termal dogrulama ve evidence saglar.
+- C2/dashboard katmani bu kaynaklari tek operasyon resmi ve olay dosyasi altinda toplar.
+- Operator yukunu azaltmak icin sensor fusion, duplicate track azaltma ve false alarm azaltma onemlidir.
+- On-prem/lokal deployment secenegi gercek urunlerde de vardir; bu yuzden RadarDesk'in lokal-first evidence karari korunmalidir.
+
+Incelenen acik kaynaklar:
+
+- Dedrone: https://www.dedrone.com/
+- DedroneTrailer: https://www.dedrone.com/solutions/dedrone-trailer
+- DroneShield fixed-site systems: https://www.droneshield.com/products-fixed-site
+- L3Harris Drone Guardian: https://www.l3harris.com/all-capabilities/drone-guardian-counter-suas
+- Teledyne FLIR Defense C-UAS: https://defense.flir.com/integrated-solutions/counter-uas/
+- Senstar sensor fusion note: https://senstar.com/security-digest/sensor-fusion-the-next-generation-of-perimeter-security/
+
+RadarDesk icin urun karari:
+
+1. `SensorEvent` tek cihazdan gelen normalize kayit olarak kalir.
+2. `Incident` veya `CorrelatedEvent` birden fazla sensor event'ini tek olay dosyasi altinda birlestiren ust model olur.
+3. Kamera snapshot/clip, radar JSON evidence ve RF JSON evidence ayni incident uzerinde referanslanir.
+4. Incident; severity, confidence, review status, operator note ve evidence listesi tasimalidir.
+5. False alarm azaltma, tek sensor alarmi ile coklu sensor dogrulamasi arasinda fark yaratacak kurallarla baslamalidir.
+
+Baslangic false alarm kurali:
+
+- `single-sensor`: Tek sensor tipinden gelen olay adayi; dusuk guvenle acik kalir.
+- `multi-sensor`: Ayni zaman/proje penceresinde iki veya daha fazla sensor tipi olayi destekler; daha yuksek guvenle incelemeye duser.
+- `operator-confirmed`: Operator kanitlari inceleyip olayi dogrular; sistem artik bunu operator onayli incident olarak gosterir.
 
 ## Lokal Sensor Event Akisi
 

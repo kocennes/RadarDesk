@@ -11,12 +11,14 @@ import {
   fetchMockCameraFeeds,
   fetchMockDevices,
   fetchMockDiscoveredDevices,
+  fetchMockIncidents,
   fetchMockSensorEvents,
   getMockAlerts,
   getMockCameraFeeds,
   getMockDashboardData,
   getMockDevices,
   getMockDiscoveredDevices,
+  getMockIncidents,
   getMockProjects,
   getMockSensorEvents,
   getMockUsers,
@@ -34,6 +36,7 @@ describe('mockApi', () => {
     expect(dashboardData.cameraFeeds).toHaveLength(cameraFeeds.length)
     expect(dashboardData.discoveredDevices).toHaveLength(discoveredDevices.length)
     expect(dashboardData.sensorEvents).toHaveLength(sensorEvents.length)
+    expect(dashboardData.incidents.length).toBeGreaterThan(0)
   })
 
   it('exposes async mock fetchers for the future API transition', async () => {
@@ -41,6 +44,7 @@ describe('mockApi', () => {
     await expect(fetchMockCameraFeeds()).resolves.toHaveLength(cameraFeeds.length)
     await expect(fetchMockDiscoveredDevices()).resolves.toHaveLength(discoveredDevices.length)
     await expect(fetchMockSensorEvents()).resolves.toHaveLength(sensorEvents.length)
+    await expect(fetchMockIncidents()).resolves.toHaveLength(getMockIncidents().length)
 
     const dashboardData = await fetchMockDashboardData()
 
@@ -55,6 +59,7 @@ describe('mockApi', () => {
     const mockCameraFeeds = getMockCameraFeeds()
     const mockDiscoveredDevices = getMockDiscoveredDevices()
     const mockSensorEvents = getMockSensorEvents()
+    const mockIncidents = getMockIncidents()
 
     expect(mockDevices).not.toBe(devices)
     expect(mockAlerts).not.toBe(alerts)
@@ -63,6 +68,7 @@ describe('mockApi', () => {
     expect(mockCameraFeeds).not.toBe(cameraFeeds)
     expect(mockDiscoveredDevices).not.toBe(discoveredDevices)
     expect(mockSensorEvents).not.toBe(sensorEvents)
+    expect(mockIncidents[0].evidenceRefs[0]).not.toBe(getMockIncidents()[0].evidenceRefs[0])
     expect(mockDevices[0]).not.toBe(devices[0])
     expect(mockAlerts[0]).not.toBe(alerts[0])
     expect(mockProjects[0]).not.toBe(projects[0])
@@ -71,6 +77,18 @@ describe('mockApi', () => {
     expect(mockDiscoveredDevices[0]).not.toBe(discoveredDevices[0])
     expect(mockSensorEvents[0]).not.toBe(sensorEvents[0])
     expect(mockSensorEvents[0].metadata).not.toBe(sensorEvents[0].metadata)
+  })
+
+  it('builds incident summaries from local sensor events', () => {
+    const incidents = getMockIncidents()
+
+    expect(incidents[0]).toMatchObject({
+      confirmationLevel: 'multi-sensor',
+      projectId: 'project-001',
+      status: 'reviewing',
+    })
+    expect(incidents[0].sensorEventIds.length).toBeGreaterThan(1)
+    expect(incidents[0].confidence).toBeGreaterThanOrEqual(0.75)
   })
 
   it('keeps the mock role set aligned with the planned access model', () => {

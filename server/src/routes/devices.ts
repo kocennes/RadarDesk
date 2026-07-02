@@ -1,5 +1,11 @@
 import { Router } from 'express'
-import { createRegisteredDevice, getDevices, getRequestedMockUserId } from '../services/mockDashboardService'
+import {
+  createRegisteredDevice,
+  deleteRegisteredDevice,
+  disconnectRegisteredDevice,
+  getDevices,
+  getRequestedMockUserId,
+} from '../services/mockDashboardService'
 import { sendApiError, sendData } from '../utils/apiResponse'
 import { parseRegisterDeviceInput } from '../validation/deviceRegistrationValidation'
 
@@ -28,4 +34,32 @@ devicesRouter.post('/devices/register', (request, response) => {
   }
 
   sendData(response, registeredDevice, 201)
+})
+
+devicesRouter.patch('/devices/:deviceId/disconnect', (request, response) => {
+  const disconnectedDevice = disconnectRegisteredDevice(
+    request.params.deviceId,
+    getRequestedMockUserId(request.header('x-mock-user-id') ?? request.query.userId),
+  )
+
+  if (!disconnectedDevice) {
+    sendApiError(response, 404, 'device_not_found', 'Selected device could not be disconnected.')
+    return
+  }
+
+  sendData(response, disconnectedDevice)
+})
+
+devicesRouter.delete('/devices/:deviceId', (request, response) => {
+  const deleted = deleteRegisteredDevice(
+    request.params.deviceId,
+    getRequestedMockUserId(request.header('x-mock-user-id') ?? request.query.userId),
+  )
+
+  if (!deleted) {
+    sendApiError(response, 404, 'device_not_found', 'Selected device could not be deleted.')
+    return
+  }
+
+  response.status(204).send()
 })

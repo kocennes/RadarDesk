@@ -91,6 +91,26 @@ export type SensorEvent = {
   evidence?: LocalEvidenceRef
 }
 
+export type IncidentStatus = 'open' | 'reviewing' | 'confirmed' | 'dismissed'
+
+export type IncidentConfirmationLevel = 'single-sensor' | 'multi-sensor' | 'operator-confirmed'
+
+export type Incident = {
+  id: string
+  projectId: string
+  title: string
+  severity: AlertSeverity
+  confidence: number
+  confirmationLevel: IncidentConfirmationLevel
+  status: IncidentStatus
+  sensorEventIds: string[]
+  sourceDeviceIds: string[]
+  evidenceRefs: LocalEvidenceRef[]
+  operatorNote?: string
+  createdAt: string
+  updatedAt: string
+}
+
 export type CameraFeedStatus = 'online' | 'standby' | 'offline'
 
 export type CameraFeed = {

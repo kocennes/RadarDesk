@@ -1,7 +1,7 @@
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 340px;
+  grid-template-columns: 220px minmax(0, 1fr);
   background: #f4f6f8;
   color: #1f2937;
 }
@@ -164,15 +164,18 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
   gap: 16px;
 }
 
 .setup-column,
-.workspace-side {
+.workspace-lower {
   display: grid;
   gap: 16px;
   align-content: start;
+}
+
+.workspace-lower {
+  grid-template-columns: minmax(340px, 0.9fr) minmax(320px, 1.1fr);
 }
 
 .map-panel,
@@ -184,7 +187,7 @@
 .map-surface {
   position: relative;
   display: block;
-  min-height: 430px;
+  min-height: 560px;
   overflow: hidden;
   border: 1px solid #ccd5df;
   border-radius: 8px;
@@ -197,7 +200,7 @@
 
 .leaflet-map {
   width: 100%;
-  min-height: 430px;
+  min-height: 560px;
   z-index: 0;
 }
 
@@ -211,7 +214,7 @@
 }
 
 .map-loading {
-  min-height: 430px;
+  min-height: 560px;
   border: 0;
 }
 
@@ -230,9 +233,11 @@
 
 .right-panel {
   display: grid;
+  grid-column: 2;
+  grid-template-columns: repeat(3, minmax(280px, 1fr));
   align-content: start;
   gap: 16px;
-  padding: 24px 24px 24px 0;
+  padding: 0 24px 24px;
 }
 
 .stack {
@@ -267,7 +272,8 @@
 .alert-row,
 .device-row,
 .camera-row,
-.event-row {
+.event-row,
+.incident-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -276,6 +282,59 @@
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   background: #ffffff;
+}
+
+.incident-badges {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.incident-content {
+  display: grid;
+  width: 100%;
+  gap: 10px;
+}
+
+.incident-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.incident-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.device-row-actions {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.status-badge-with-info {
+  display: inline-flex;
+  cursor: help;
+}
+
+.status-badge-with-info:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.device-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.danger-button {
+  color: #b10e1c;
 }
 
 .discovery-layout {
@@ -334,9 +393,7 @@
   }
 
   .right-panel {
-    grid-column: 1 / -1;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 0 24px 24px;
   }
 }
 
@@ -355,13 +412,14 @@
   }
 
   .metric-grid,
-  .workspace,
+  .workspace-lower,
   .right-panel,
   .event-test-actions {
     grid-template-columns: 1fr;
   }
 
   .right-panel {
+    grid-column: 1;
     padding: 0 20px 20px;
   }
 

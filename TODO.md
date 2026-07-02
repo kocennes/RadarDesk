@@ -4,8 +4,9 @@
 
 - [x] Admin panel/musteri-yetki ekranlarini simdilik ikinci plana al; ilk acilista herhangi bir kullanicinin cihaz baglayip isimlendirebildigi lokal kurulum akisini one al.
 - [x] Ilk ekranda cihaz kesfi, cihaz secimi, kullanici tarafindan adlandirma ve kayitli cihaz listesi ana is olsun.
-- [ ] Musteri/proje/paket/yetki modeli kodda kirilmadan kalsin, fakat UI'da kullanicinin onune ilk bariyer olarak cikmasin.
-- [ ] Gercek radar/kamera/RF cihaz baglantisi icin once backend kontrollu kesif/probe akisini kullan; secret, stream URL veya genis ag taramasi ekleme.
+- [x] Lokal ilk urun deneyiminde tum operasyon modulleri kullanicinin paketinde var kabul edilsin; ekranlar cihaz baglantisina gore dolsun, paket bariyeri ilk ekranda kullaniciyi engellemesin.
+- [x] Musteri/proje/paket/yetki modeli kodda kirilmadan kalsin, fakat UI'da kullanicinin onune ilk bariyer olarak cikmasin; kurumsal/admin satis modeline gecince tekrar ayrintilandirilsin.
+- [x] Gercek radar/kamera/RF cihaz baglantisi icin once backend kontrollu kesif/probe akisini kullan; secret, stream URL veya genis ag taramasi ekleme.
 - [x] Kamera snapshot, kisa olay klibi, alarm kaniti ve cihaz baglanti ayarlarini varsayilan olarak lokal backend makinesinde tut; bulut/storage entegrasyonunu opsiyonel ve sonradan yap.
 - [x] Olay verilerinde database'e ham goruntu yerine metadata ve lokal dosya referansi yazma stratejisini tasarla.
 - [x] Kamera feed icin backend snapshot capture endpointi ekle; real modda `snapshotUrl` backend'den okunup lokal evidence klasorune yazilsin, mock modda placeholder kanit uretilsin.
@@ -19,6 +20,22 @@
 - [x] Mock data disinda gelecek gercek veriler icin `rawSource`, `ingestMode`, `capabilities` ve lokal evidence path alanlarini domain modeline hazirla.
 - [x] Gercek cihaz baglanmadan once lokal backend ingest akisini denemek icin frontend'de kamera/radar/RF test olayi ureten kontrol ekle; kamera olayinda snapshot kaniti backend tarafinda otomatik olussun, radar/RF olayinda metadata kaydi olussun.
 - [x] Radar/RF gibi goruntu uretmeyen sensor event'lerinde normalize metadata'yi lokal JSON evidence dosyasi olarak kaydet; event modelinde `dataPath` referansi goster.
+- [x] `DEVICE_DISCOVERY_SOURCE=config` ve `DEVICE_DISCOVERY_JSON` ile backend kontrollu cihaz kesfi kaynagi ekle; frontend'e sadece guvenli metadata donsun.
+- [x] Kayitli cihazlar icin iki ayri kaldirma akisi ekle: `Baglantiyi kaldir` cihazi pasif/offline yapip yeni event/kanit uretimini durdurmali; `Cihazi sil` kayitli cihaz listesinden tamamen cikarmali ki yerine baska cihaz eklenebilsin.
+- [x] `Cihazi sil` islemi eski lokal evidence ve olay gecmisini otomatik silmemeli; kanit temizleme daha sonra ayri ve acik onayli bir aksiyon olarak tasarlanmali.
+- [x] Baglantisi kaldirilmis veya kopmus cihaz icin sorunsuz tekrar baglama akisi ekle; ayni fiziksel cihaz tekrar secilip yeni/var olan display name ile calisabilsin.
+- [x] Frontend modulleri paket yetkisine gore gizlemek yerine lokal kurulumda bagli cihazlara gore bos/dolu durum goster; cihaz yoksa ilgili panel bos durum gostersin.
+
+## Arastirma Sonrasi Urun Yonu: Sensor Fusion ve Incident Dosyasi
+
+- [x] Gercek urun orneklerinden cikan ortak modeli dokumante et: radar + RF + EO/IR kamera + C2/dashboard + lokal/on-prem evidence.
+- [x] `Incident` veya `CorrelatedEvent` domain modelini tasarla; birden fazla `SensorEvent` kaydini tek olay dosyasi altinda birlestirsin.
+- [x] Kamera snapshot/clip, radar JSON evidence ve RF JSON evidence referanslarini ayni incident uzerinden gosterecek veri modelini planla.
+- [x] Backend'de ilk basit korelasyon kuralini tasarla: yakin zaman araliginda ayni proje/saha icindeki radar, RF ve kamera event'lerini aday incident olarak grupla.
+- [x] Frontend'de tekil sensor event listesinin yanina incident/olay dosyasi gorunumu ekle; operator notu, inceleme durumu ve evidence referanslarini gostersin.
+- [x] Incident icin lokal review overlay ekle; operator `open/reviewing/confirmed/dismissed` status ve kisa notu backend validation ile kaydedebilsin.
+- [x] False alarm azaltma hedefi icin sensor fusion karar notu yaz: tek sensor alarmi, coklu sensor dogrulamasi ve operator onayi farkli severity/guven seviyeleri uretsin.
+- [ ] Gercek urun arastirmasinda gecen cloud/on-prem seceneklerini deployment kararlarina bagla; varsayilan lokal/on-prem, bulut opsiyonel kalsin.
 
 ## En Oncelikli: Musteri/Paket/Yetki Modeli
 
@@ -28,7 +45,7 @@
 - [x] Her musterinin sadece kendi proje/saha cihazlarini, camera feedlerini, alarmlarini ve verisini gorecegi veri izolasyonu kuralini uygula.
 - [x] Cok sayida viewer icin tek tek cihaz atamak yerine `access group` tabanli yetkilendirme tasarla.
 - [x] API response'larini kullanicinin effective access sonucuna gore filtrele; yetkisiz radar/RF/C2/kamera verisini client'a hic dondurme.
-- [ ] Frontend dashboardu backend'den gelen paket/modul yetkilerine gore sekillendir; satin alinmayan modulleri ekranda gosterme.
+- [x] Frontend dashboardu lokal kurulum modunda paket/modul saklama yerine bagli cihazlara gore sekillendir; satin alma/paket kisitlari ileride kurumsal/admin modda uygulanacak.
 - [ ] Database schema taslagina `customers`, `projects/sites`, `product_packages`, `modules`, `access_groups`, `group_memberships` ve ilgili iliskileri ekle.
 
 ## Kisa Vade

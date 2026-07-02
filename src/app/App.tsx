@@ -9,16 +9,27 @@ import { CameraFeedCard } from '../features/cameras/CameraFeedCard'
 import { getDashboardStats } from '../features/dashboard/dashboardMetrics'
 import { getDashboardViewData, type DashboardViewMode } from '../features/dashboard/dashboardViewState'
 import { MetricCard } from '../features/dashboard/MetricCard'
+import { getDashboardModuleVisibility } from '../features/dashboard/moduleVisibility'
 import { StateToolbar } from '../features/dashboard/StateToolbar'
 import { DeviceDiscoveryCard } from '../features/devices/DeviceDiscoveryCard'
 import { DeviceList } from '../features/devices/DeviceList'
 import { filterDevices, type DeviceStatusFilter } from '../features/devices/deviceFilters'
 import { SensorEventList } from '../features/events/SensorEventList'
 import { SensorEventTester } from '../features/events/SensorEventTester'
+import { buildIncidentsFromSensorEvents } from '../features/incidents/incidentCorrelation'
+import { IncidentList } from '../features/incidents/IncidentList'
 import { MapPanelContent } from '../features/map/MapPanelContent'
 import { ProjectIntakeCard } from '../features/projects/ProjectIntakeCard'
-import { fetchDashboardData, ingestSensorEvent, registerDeviceFromDiscovery } from '../services/apiClient'
+import {
+  deleteDevice,
+  disconnectDevice,
+  fetchDashboardData,
+  ingestSensorEvent,
+  registerDeviceFromDiscovery,
+  updateIncidentReview,
+} from '../services/apiClient'
 import type { MockDashboardData } from '../services/mockApi'
+import type { Device } from '../types/domain'
 import './App.css'
 
 const emptyDashboardData: MockDashboardData = {
@@ -29,6 +40,7 @@ const emptyDashboardData: MockDashboardData = {
   cameraFeeds: [],
   discoveredDevices: [],
   sensorEvents: [],
+  incidents: [],
   effectiveAccess: {
     userId: '',
     role: 'none',
@@ -49,6 +61,7 @@ export function App() {
   const [deviceSearchTerm, setDeviceSearchTerm] = useState<string>('')
   const [deviceStatusFilter, setDeviceStatusFilter] = useState<DeviceStatusFilter>('all')
   const [alertSeverityFilter, setAlertSeverityFilter] = useState<AlertSeverityFilter>('all')
+  const [actionDeviceId, setActionDeviceId] = useState<string>()
 
   useEffect(() => {
     let isCurrent = true
@@ -86,7 +99,55 @@ export function App() {
     searchTerm: deviceSearchTerm,
     status: deviceStatusFilter,
   })
-  const canViewCameraFeeds = dashboardData.effectiveAccess.allowedModules.includes('camera-feeds')
+  const moduleVisibility = getDashboardModuleVisibility(dashboardData.effectiveAccess)
+
+  async function handleDisconnectDevice(device: Device) {
+    if (!window.confirm(`${device.name} baglantisi kaldirilsin mi? Yeni event ve kanit uretimi duracak.`)) {
+      return
+    }
+
+    setActionDeviceId(device.id)
+
+    try {
+      const disconnectedDevice = await disconnectDevice(device)
+
+      setDashboardData((currentData) => ({
+        ...currentData,
+        cameraFeeds: currentData.cameraFeeds.map((cameraFeed) =>
+          cameraFeed.deviceId === disconnectedDevice.id ? { ...cameraFeed, status: 'offline' } : cameraFeed,
+        ),
+        devices: currentData.devices.map((candidate) =>
+          candidate.id === disconnectedDevice.id ? disconnectedDevice : candidate,
+        ),
+      }))
+    } catch {
+      window.alert('Cihaz baglantisi kaldirilamadi.')
+    } finally {
+      setActionDeviceId(undefined)
+    }
+  }
+
+  async function handleDeleteDevice(device: Device) {
+    if (!window.confirm(`${device.name} kayitli cihaz listesinden silinsin mi? Eski kanit ve olay gecmisi korunacak.`)) {
+      return
+    }
+
+    setActionDeviceId(device.id)
+
+    try {
+      await deleteDevice(device.id)
+
+      setDashboardData((currentData) => ({
+        ...currentData,
+        cameraFeeds: currentData.cameraFeeds.filter((cameraFeed) => cameraFeed.deviceId !== device.id),
+        devices: currentData.devices.filter((candidate) => candidate.id !== device.id),
+      }))
+    } catch {
+      window.alert('Cihaz silinemedi.')
+    } finally {
+      setActionDeviceId(undefined)
+    }
+  }
 
   return (
     <FluentProvider theme={webLightTheme}>
@@ -105,43 +166,7 @@ export function App() {
           </section>
 
           <section className="workspace">
-            {currentProject ? (
-              <div className="setup-column">
-                <DeviceDiscoveryCard
-                  discoveredDevices={dashboardData.discoveredDevices}
-                  onRegisterDevice={(input) =>
-                    registerDeviceFromDiscovery({
-                      ...input,
-                      discoveredDevices: dashboardData.discoveredDevices,
-                      project: currentProject,
-                    })
-                  }
-                  onDeviceRegistered={(device) =>
-                    setDashboardData((currentData) => ({
-                      ...currentData,
-                      devices: currentData.devices.some((candidate) => candidate.id === device.id)
-                        ? currentData.devices.map((candidate) => (candidate.id === device.id ? device : candidate))
-                        : [...currentData.devices, device],
-                    }))
-                  }
-                />
-              </div>
-            ) : (
-              <Card className="project-card">
-                <CardHeader
-                  header={<Text weight="semibold">Cihaz kurulumu</Text>}
-                  description={<Text size={200}>Kurulum baglami yukleniyor</Text>}
-                />
-                <ListState
-                  message={
-                    dashboardLoadState === 'error' ? 'Cihaz kurulum bilgisi yuklenemedi' : 'Cihazlar taraniyor'
-                  }
-                  tone={dashboardLoadState === 'error' ? 'error' : 'default'}
-                />
-              </Card>
-            )}
-
-            <div className="workspace-side">
+            {moduleVisibility.canViewMap ? (
               <Card className="map-panel">
                 <CardHeader
                   header={<Text weight="semibold">Kayitli cihaz alani</Text>}
@@ -149,6 +174,52 @@ export function App() {
                 />
                 <MapPanelContent alerts={filteredAlerts} devices={visibleData.devices} viewMode={effectiveViewMode} />
               </Card>
+            ) : null}
+
+            <div className="workspace-lower">
+              {currentProject && moduleVisibility.canUseDeviceSetup ? (
+                <div className="setup-column">
+                  <DeviceDiscoveryCard
+                    discoveredDevices={dashboardData.discoveredDevices}
+                    onRegisterDevice={(input) =>
+                      registerDeviceFromDiscovery({
+                        ...input,
+                        discoveredDevices: dashboardData.discoveredDevices,
+                        project: currentProject,
+                      })
+                    }
+                    onDeviceRegistered={(device) =>
+                      setDashboardData((currentData) => ({
+                        ...currentData,
+                        devices: currentData.devices.some((candidate) => candidate.id === device.id)
+                          ? currentData.devices.map((candidate) => (candidate.id === device.id ? device : candidate))
+                          : [...currentData.devices, device],
+                      }))
+                    }
+                  />
+                </div>
+              ) : !moduleVisibility.canUseDeviceSetup ? (
+                <Card className="project-card">
+                  <CardHeader
+                    header={<Text weight="semibold">Cihaz kurulumu</Text>}
+                    description={<Text size={200}>Bu paket cihaz kurulum panelini icermiyor</Text>}
+                  />
+                  <ListState message="Cihaz kurulumu modulu kapali" tone="default" />
+                </Card>
+              ) : (
+                <Card className="project-card">
+                  <CardHeader
+                    header={<Text weight="semibold">Cihaz kurulumu</Text>}
+                    description={<Text size={200}>Kurulum baglami yukleniyor</Text>}
+                  />
+                  <ListState
+                    message={
+                      dashboardLoadState === 'error' ? 'Cihaz kurulum bilgisi yuklenemedi' : 'Cihazlar taraniyor'
+                    }
+                    tone={dashboardLoadState === 'error' ? 'error' : 'default'}
+                  />
+                </Card>
+              )}
 
               {currentProject ? <ProjectIntakeCard project={currentProject} /> : null}
             </div>
@@ -156,43 +227,76 @@ export function App() {
         </section>
 
         <aside className="right-panel" aria-label="Alarm ve cihaz durumu">
-          <Card>
-            <CardHeader header={<Text weight="semibold">Alarmlar</Text>} />
-            <AlertList
-              alerts={filteredAlerts}
-              severityFilter={alertSeverityFilter}
-              viewMode={effectiveViewMode}
-              onSeverityFilterChange={setAlertSeverityFilter}
+          {moduleVisibility.canViewAlerts ? (
+            <Card>
+              <CardHeader header={<Text weight="semibold">Alarmlar</Text>} />
+              <AlertList
+                alerts={filteredAlerts}
+                severityFilter={alertSeverityFilter}
+                viewMode={effectiveViewMode}
+                onSeverityFilterChange={setAlertSeverityFilter}
+              />
+            </Card>
+          ) : null}
+
+          {moduleVisibility.canViewCameraFeeds ? <CameraFeedCard cameraFeeds={dashboardData.cameraFeeds} /> : null}
+
+          {moduleVisibility.canUseSensorTester ? (
+            <SensorEventTester
+              cameraFeeds={dashboardData.cameraFeeds}
+              devices={dashboardData.devices}
+              onCreateEvent={ingestSensorEvent}
+              onEventCreated={(event) =>
+                setDashboardData((currentData) => {
+                  const sensorEvents = [event, ...currentData.sensorEvents]
+
+                  return {
+                    ...currentData,
+                    incidents: buildIncidentsFromSensorEvents(sensorEvents, currentData.devices),
+                    sensorEvents,
+                  }
+                })
+              }
             />
-          </Card>
+          ) : null}
 
-          {canViewCameraFeeds ? <CameraFeedCard cameraFeeds={dashboardData.cameraFeeds} /> : null}
+          {moduleVisibility.canViewIncidents ? (
+            <IncidentList
+              incidents={dashboardData.incidents}
+              onReviewIncident={async (incident, input) => {
+                const updatedIncident = await updateIncidentReview({
+                  incident,
+                  ...input,
+                })
 
-          <SensorEventTester
-            cameraFeeds={dashboardData.cameraFeeds}
-            devices={dashboardData.devices}
-            onCreateEvent={ingestSensorEvent}
-            onEventCreated={(event) =>
-              setDashboardData((currentData) => ({
-                ...currentData,
-                sensorEvents: [event, ...currentData.sensorEvents],
-              }))
-            }
-          />
-
-          <SensorEventList events={dashboardData.sensorEvents} />
-
-          <Card>
-            <CardHeader header={<Text weight="semibold">Cihazlar</Text>} />
-            <DeviceList
-              devices={filteredDevices}
-              searchTerm={deviceSearchTerm}
-              statusFilter={deviceStatusFilter}
-              viewMode={effectiveViewMode}
-              onSearchTermChange={setDeviceSearchTerm}
-              onStatusFilterChange={setDeviceStatusFilter}
+                setDashboardData((currentData) => ({
+                  ...currentData,
+                  incidents: currentData.incidents.map((candidate) =>
+                    candidate.id === updatedIncident.id ? updatedIncident : candidate,
+                  ),
+                }))
+              }}
             />
-          </Card>
+          ) : null}
+
+          {moduleVisibility.canViewSensorEvents ? <SensorEventList events={dashboardData.sensorEvents} /> : null}
+
+          {moduleVisibility.canViewDevices ? (
+            <Card>
+              <CardHeader header={<Text weight="semibold">Cihazlar</Text>} />
+              <DeviceList
+                devices={filteredDevices}
+                actionDeviceId={actionDeviceId}
+                searchTerm={deviceSearchTerm}
+                statusFilter={deviceStatusFilter}
+                viewMode={effectiveViewMode}
+                onDeleteDevice={(device) => void handleDeleteDevice(device)}
+                onDisconnectDevice={(device) => void handleDisconnectDevice(device)}
+                onSearchTermChange={setDeviceSearchTerm}
+                onStatusFilterChange={setDeviceStatusFilter}
+              />
+            </Card>
+          ) : null}
         </aside>
       </main>
     </FluentProvider>
