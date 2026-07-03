@@ -259,3 +259,16 @@
 - [x] Frontend MVP tamamlanan ozellikleri ve kalan backend/database islerini README'de ayri bolumlerde listele.
 - [ ] Yeni backend baslangici icin kisa karar kaydi yaz: neden Express/Fastify secildi, hangi endpointler once gelecek.
 - [x] Mock veri kullanimi politikasini README'de netlestir: gercek musteri, saha, koordinat ve PDF verisi kullanilmaz.
+
+## Yarin: BISAVUNMA C2 Urun Polish
+
+- [ ] C2 dashboard gorsel dilini BİSAVUNMA kurumsal urun hissine yaklastir; demo/neon yogunlugunu azalt, daha sade ve guvenilir operasyon UI tonu kullan.
+- [ ] UI dilini netlestir: tamamen TR, tamamen EN veya i18n destekli iki dil secenegi; `Evidence`, `Gecmis`, `Kamera Oner`, `Incidents` gibi karisik etiketleri tutarli hale getir.
+- [ ] Her cihaz icin `DeviceDetailCard` tasarla; model no, protokol, baglanti tarihi, uptime, health, firmware, son paketler ve varsa evidence/snapshot referanslarini tek kartta goster.
+- [ ] Cihaz listesi, harita marker'i ve PPI/RF/kamera panellerinden secili cihaza odaklanan ortak `selectedDeviceId` state akisini tasarla.
+- [ ] BİSAVUNMA urun zincirine uygun mitigation/countermeasure panelini planla; jammer/hard-kill aksiyonlari ilk etapta sadece dry-run, yetki, audit ve supervisor onay modeliyle gorunsun.
+- [ ] Slew-to-cue akisini backend command/audit modeliyle hizala; frontend sadece onerilen kamera yonlendirme niyetini gondersin, RTSP/ONVIF/vendor komutu direkt cikmasin.
+- [ ] Son 24 saat/gecmis veriler davranisini kamera, radar, RF, alarm ve incident panellerinde ortak component veya helper ile tutarli hale getir.
+- [ ] Evidence/snapshot gecmisi icin backend kontratini netlestir: `evidence_id`, `incident_id`, safe `preview_url`, hash, captured_at ve yetki/audit alanlari.
+- [ ] Harita ve cihaz konumlari icin demo/default koordinat politikasini yaz; gercek musteri veya hassas saha koordinati mock veriye girmesin.
+- [ ] Build/test kontrolunden sonra C2 ekraninda mobil/desktop tasma, metin sikisma, kart ic scroll ve tooltip davranislarini Playwright/screenshot ile gozden gecir.
