@@ -149,7 +149,7 @@ body {
 }
 
 .c2-state-toolbar button,
-.c2-tabs button,
+.c2-tab-button,
 .c2-tester button,
 .c2-device-type-grid button,
 .c2-form-grid button,
@@ -171,7 +171,7 @@ body {
 }
 
 .c2-state-toolbar button.is-active,
-.c2-tabs button.is-active,
+.c2-tab-button.is-active,
 .c2-primary-button,
 .c2-form-grid button {
   border-color: rgba(0, 229, 255, 0.7);
@@ -1044,8 +1044,31 @@ body {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.c2-tabs button {
+.c2-tab-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.c2-tab-button {
   height: 38px;
+}
+
+.c2-tab-info {
+  z-index: 3;
+}
+
+.c2-tab-info::after {
+  left: auto;
+  right: -4px;
+  transform: translate(0, -2px);
+}
+
+.c2-tab-info:hover::after,
+.c2-tab-info:focus::after {
+  transform: translate(0, 0);
 }
 
 .c2-alert-list {

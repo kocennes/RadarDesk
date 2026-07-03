@@ -85,12 +85,32 @@ export default function NexusC2Dashboard() {
         <AlarmFeedCard alarms={alarms} />
         <section className="c2-card c2-tabs-card">
           <div className="c2-tabs" role="tablist" aria-label="Alarm ve olay dosyalari">
-            <button className={activeTab === 'alerts' ? 'is-active' : ''} onClick={() => setActiveTab('alerts')} type="button">
-              Alerts
-            </button>
-            <button className={activeTab === 'incidents' ? 'is-active' : ''} onClick={() => setActiveTab('incidents')} type="button">
-              Incidents
-            </button>
+            <div className="c2-tab-control">
+              <button className={`c2-tab-button ${activeTab === 'alerts' ? 'is-active' : ''}`} onClick={() => setActiveTab('alerts')} type="button">
+                Alerts
+              </button>
+              <button
+                aria-label="Alerts bilgi"
+                className="c2-info c2-tab-info"
+                data-info="Alerts, radar/RF/kamera korelasyonundan uretilen anlik operasyon uyarilaridir. Operatorun hizli risk takibi icindir."
+                type="button"
+              >
+                i
+              </button>
+            </div>
+            <div className="c2-tab-control">
+              <button className={`c2-tab-button ${activeTab === 'incidents' ? 'is-active' : ''}`} onClick={() => setActiveTab('incidents')} type="button">
+                Incidents
+              </button>
+              <button
+                aria-label="Incidents bilgi"
+                className="c2-info c2-tab-info"
+                data-info="Incidents, birden fazla uyari ve kanitin ayni olay dosyasi altinda toplandigi inceleme kayitlaridir."
+                type="button"
+              >
+                i
+              </button>
+            </div>
           </div>
           {activeTab === 'alerts' ? <AlertList alarms={alarms} /> : <IncidentList incidents={initialIncidents} />}
         </section>
