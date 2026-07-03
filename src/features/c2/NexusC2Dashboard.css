@@ -740,10 +740,16 @@ body {
   overflow: hidden;
 }
 
+.c2-camera-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(150px, 0.85fr);
+  gap: 10px;
+  min-height: 0;
+}
+
 .c2-camera-frame {
   position: relative;
   min-height: 0;
-  aspect-ratio: 16 / 9;
   overflow: hidden;
   border: 1px solid rgba(0, 229, 255, 0.36);
   border-radius: 7px;
@@ -811,6 +817,93 @@ body {
 .c2-secondary-button:hover {
   border-color: rgba(255, 207, 102, 0.72);
   background: rgba(255, 207, 102, 0.16);
+}
+
+.c2-evidence-rail {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 9px;
+  border: 1px solid rgba(0, 229, 255, 0.22);
+  border-radius: 7px;
+  background: rgba(6, 14, 25, 0.72);
+}
+
+.c2-evidence-rail-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.c2-evidence-rail-head strong {
+  overflow: hidden;
+  color: var(--c2-cyan);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.c2-evidence-rail-head button {
+  height: 26px;
+  border: 1px solid rgba(255, 207, 102, 0.42);
+  border-radius: 5px;
+  background: rgba(255, 207, 102, 0.1);
+  color: #ffcf66;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.c2-evidence-rail-list {
+  display: grid;
+  gap: 7px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.c2-evidence-mini {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 7px;
+  min-height: 58px;
+  padding: 6px;
+  border: 1px solid rgba(0, 229, 255, 0.16);
+  border-radius: 6px;
+  background: rgba(12, 22, 38, 0.82);
+}
+
+.c2-evidence-mini .c2-evidence-preview {
+  min-height: 44px;
+}
+
+.c2-evidence-mini > div:last-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.c2-evidence-mini strong,
+.c2-evidence-mini span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.c2-evidence-mini strong {
+  color: var(--c2-text);
+  font-size: 11px;
+}
+
+.c2-evidence-mini span {
+  color: var(--c2-muted);
+  font-size: 10px;
 }
 
 .c2-evidence-panel {

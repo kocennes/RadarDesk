@@ -441,11 +441,14 @@ function CameraFeedCard({
         subtitle="RTSP_H264 evidence metadata"
         title="CameraFeedCard"
       />
-      <div className="c2-camera-frame">
-        <div className="c2-camera-reticle" />
-        <span className="c2-camera-fov">FOV {evidence?.fov_horizontal_deg ?? 42} deg / {evidence?.imaging_mode ?? 'THERMAL_IR'}</span>
-        <span className="c2-camera-mode">CONF {Math.round((evidence?.confidence_score ?? 0) * 100)}%</span>
-        <span className="c2-camera-class">{evidence?.threat_classification ?? 'NO_TARGET'}</span>
+      <div className="c2-camera-body">
+        <div className="c2-camera-frame">
+          <div className="c2-camera-reticle" />
+          <span className="c2-camera-fov">FOV {evidence?.fov_horizontal_deg ?? 42} deg / {evidence?.imaging_mode ?? 'THERMAL_IR'}</span>
+          <span className="c2-camera-mode">CONF {Math.round((evidence?.confidence_score ?? 0) * 100)}%</span>
+          <span className="c2-camera-class">{evidence?.threat_classification ?? 'NO_TARGET'}</span>
+        </div>
+        <CameraEvidenceRail evidences={evidences} onOpen={() => setIsEvidenceOpen(true)} />
       </div>
       <div className="c2-camera-actions">
         <button className="c2-primary-button" onClick={onSuggestCamera} type="button">
@@ -462,6 +465,34 @@ function CameraFeedCard({
       {commandMetadata ? <div className="c2-command-note">{commandMetadata.command_type} / dry-run / {commandMetadata.command_id}</div> : null}
       {isEvidenceOpen ? <CameraEvidencePanel evidences={evidences} /> : null}
     </section>
+  )
+}
+
+function CameraEvidenceRail({ evidences, onOpen }: { evidences: CameraEvidenceEvent[]; onOpen: () => void }) {
+  return (
+    <aside className="c2-evidence-rail" aria-label="Kamera snapshot gecmisi">
+      <div className="c2-evidence-rail-head">
+        <strong>Evidence / Snapshots</strong>
+        <button onClick={onOpen} type="button">
+          Ac
+        </button>
+      </div>
+      <div className="c2-evidence-rail-list c2-scroll">
+        {evidences.slice(0, 3).map((item) => (
+          <article className="c2-evidence-mini" key={`${item.device_id}-${item.start_time}`}>
+            <div className="c2-evidence-preview" aria-hidden="true">
+              {item.imaging_mode === 'THERMAL_IR' ? 'IR' : 'EO'}
+            </div>
+            <div>
+              <strong>{item.threat_classification}</strong>
+              <span>{formatClock(new Date(item.start_time))} / {Math.round(item.confidence_score * 100)}%</span>
+              {item.detected_plate ? <span>{item.detected_plate}</span> : <span>{item.device_id}</span>}
+            </div>
+          </article>
+        ))}
+        {evidences.length === 0 ? <div className="c2-evidence-empty">Kayit yok.</div> : null}
+      </div>
+    </aside>
   )
 }
 
