@@ -2,6 +2,7 @@ import { Badge, Button, Field, Input, Select, Text, Tooltip } from '@fluentui/re
 import type { ChangeEvent } from 'react'
 import type { Device, DeviceStatus } from '../../types/domain'
 import { ListState } from '../../components/ui/ListState'
+import { ButtonInfo } from '../../components/ui/ButtonInfo'
 import { formatDisplayTime } from '../../utils/formatters'
 import type { DashboardViewMode } from '../dashboard/dashboardViewState'
 import type { DeviceStatusFilter } from './deviceFilters'
@@ -103,54 +104,62 @@ export function DeviceList({
         </Field>
       </div>
 
-      {devices.length === 0 ? (
-        <ListState message="Bu filtrelere uyan cihaz yok" />
-      ) : (
-        devices.map((device) => (
-          <div className={`device-row device-status-${device.status}`} key={device.id}>
-            <div>
-              <Text weight="semibold">{device.name}</Text>
-              <Text className="muted" size={200}>
-                {device.location} / {device.rangeKm} km / {formatDisplayTime(device.lastSeen)}
-              </Text>
-              <Text block className="muted" size={200}>
-                {profileLabel[device.profile]} / {ingestModeLabel[device.ingestMode]} / {formatCapabilities(device.capabilities)}
-              </Text>
-              <div className="hud-chip-row">
-                <span className="hud-chip">RNG: {device.rangeKm * 1000}m</span>
-                <span className="hud-chip">TYPE: {device.type.toUpperCase()}</span>
-                <span className="hud-chip">STATUS: {device.status.toUpperCase()}</span>
+      <div className="device-list-scroll">
+        {devices.length === 0 ? (
+          <ListState message="Bu filtrelere uyan cihaz yok" />
+        ) : (
+          devices.map((device) => (
+            <div className={`device-row device-status-${device.status}`} key={device.id}>
+              <div>
+                <Text weight="semibold">{device.name}</Text>
+                <Text className="muted" size={200}>
+                  {device.location} / {device.rangeKm} km / {formatDisplayTime(device.lastSeen)}
+                </Text>
+                <Text block className="muted" size={200}>
+                  {profileLabel[device.profile]} / {ingestModeLabel[device.ingestMode]} / {formatCapabilities(device.capabilities)}
+                </Text>
+                <div className="hud-chip-row">
+                  <span className="hud-chip">RNG: {device.rangeKm * 1000}m</span>
+                  <span className="hud-chip">TYPE: {device.type.toUpperCase()}</span>
+                  <span className="hud-chip">STATUS: {device.status.toUpperCase()}</span>
+                </div>
+              </div>
+              <div className="device-row-actions">
+                <Tooltip content={getDeviceStatusDescription(device)} relationship="description">
+                  <span className="status-badge-with-info" tabIndex={0}>
+                    <Badge color={deviceStatusColor[device.status]}>{deviceStatusLabel[device.status]}</Badge>
+                  </span>
+                </Tooltip>
+                <div className="device-action-buttons">
+                  <div className="button-with-info">
+                    <Button
+                      appearance="secondary"
+                      disabled={actionDeviceId === device.id || device.status === 'offline'}
+                      size="small"
+                      onClick={() => onDisconnectDevice(device)}
+                    >
+                      Baglantiyi kaldir
+                    </Button>
+                    <ButtonInfo label="Cihazi offline yapar ve yeni event/kanit uretimini durdurur; eski kayitlar korunur." />
+                  </div>
+                  <div className="button-with-info">
+                    <Button
+                      appearance="secondary"
+                      className="danger-button"
+                      disabled={actionDeviceId === device.id}
+                      size="small"
+                      onClick={() => onDeleteDevice(device)}
+                    >
+                      Cihazi sil
+                    </Button>
+                    <ButtonInfo label="Cihazi aktif listeden kaldirir; eski evidence ve incident gecmisi otomatik silinmez." />
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="device-row-actions">
-              <Tooltip content={getDeviceStatusDescription(device)} relationship="description">
-                <span className="status-badge-with-info" tabIndex={0}>
-                  <Badge color={deviceStatusColor[device.status]}>{deviceStatusLabel[device.status]}</Badge>
-                </span>
-              </Tooltip>
-              <div className="device-action-buttons">
-                <Button
-                  appearance="secondary"
-                  disabled={actionDeviceId === device.id || device.status === 'offline'}
-                  size="small"
-                  onClick={() => onDisconnectDevice(device)}
-                >
-                  Baglantiyi kaldir
-                </Button>
-                <Button
-                  appearance="secondary"
-                  className="danger-button"
-                  disabled={actionDeviceId === device.id}
-                  size="small"
-                  onClick={() => onDeleteDevice(device)}
-                >
-                  Cihazi sil
-                </Button>
-              </div>
-            </div>
-          </div>
-        ))
-      )}
+          ))
+        )}
+      </div>
     </div>
   )
 }

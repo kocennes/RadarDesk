@@ -148,6 +148,12 @@ RadarDesk icin urun karari:
 4. Incident; severity, confidence, review status, operator note ve evidence listesi tasimalidir.
 5. False alarm azaltma, tek sensor alarmi ile coklu sensor dogrulamasi arasinda fark yaratacak kurallarla baslamalidir.
 
+Operator uyari raporu hedefi:
+
+- Radar bir IHA hedefi tespit ettiginde ve EO/IR kamera bolgeye donmesine ragmen gorus zayif kaldiginda, sistem operator icin iki cumlelik acil rapor taslagi uretebilmelidir.
+- Rapor askeri tonda, net, zaman/bolge/hiz bilgisini iceren ve operatorun olay onceligini anlamasini saglayan bir metin olmali; gercek gonderim kanali eklenene kadar mock incident verisi uzerinden test edilmelidir.
+- Ornek rapor: "ACIL UYARI: Saat 14:20'de X bolgesinde radar, 80 km/s hizla yaklasan IHA temasi tespit etmistir. Kamera hedef bolgeye yonlenmis ancak gorus zayiftir; operator olayi yuksek oncelikli incident olarak takip etmeli, ek sensor dogrulamasi ve komuta bilgilendirmesi baslatilmalidir."
+
 Baslangic false alarm kurali:
 
 - `single-sensor`: Tek sensor tipinden gelen olay adayi; dusuk guvenle acik kalir.

@@ -7,6 +7,7 @@ import {
   getDeviceBearingLine,
   getFeaturedIncidentOverlay,
   getMapCenter,
+  getMapZoom,
   getRangeMeters,
   type AlertOverlay,
   type IncidentOverlay,
@@ -59,6 +60,8 @@ const deviceTypeLabel: Record<Device['type'], string> = {
 export function OperationsMap({ alerts, devices, incidents }: OperationsMapProps) {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>(devices[0]?.id ?? '')
   const center = getMapCenter(devices)
+  const zoom = getMapZoom(devices)
+  const mapViewKey = devices.map((device) => `${device.id}:${device.latitude}:${device.longitude}`).join('|')
   const alertOverlays = getAlertOverlays(alerts, devices)
   const animatedAlertOverlays = getAnimatedAlertOverlays(alertOverlays)
   const featuredIncidentOverlay = getFeaturedIncidentOverlay(incidents, devices)
@@ -67,8 +70,9 @@ export function OperationsMap({ alerts, devices, incidents }: OperationsMapProps
     <MapContainer
       center={center}
       className="leaflet-map"
+      key={mapViewKey}
       scrollWheelZoom={false}
-      zoom={13}
+      zoom={zoom}
       zoomControl={false}
     >
       <TileLayer

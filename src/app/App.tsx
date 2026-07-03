@@ -274,7 +274,7 @@ export function App() {
             <AlarmFeedCard alerts={filteredAlerts} devices={visibleData.devices} incidents={dashboardData.incidents} />
 
             {moduleVisibility.canViewAlerts ? (
-              <Card>
+              <Card className="alerts-card">
                 <CardHeader header={<Text weight="semibold">Alarmlar</Text>} />
                 <AlertList
                   alerts={filteredAlerts}
@@ -307,36 +307,40 @@ export function App() {
         </aside>
 
         <section className="bottom-panel" aria-label="RF waterfall ve timeline alani">
-          <RadarPpiPanel events={dashboardData.sensorEvents} />
+          <div className="bottom-panel-ppi">
+            <RadarPpiPanel events={dashboardData.sensorEvents} />
+          </div>
 
-          {moduleVisibility.canUseSensorTester ? (
-            <SensorEventTester
-              cameraFeeds={dashboardData.cameraFeeds}
-              devices={dashboardData.devices}
-              onCreateEvent={ingestSensorEvent}
-              onEventCreated={(event) =>
-                setDashboardData((currentData) => {
-                  const sensorEvents = [event, ...currentData.sensorEvents]
+          <div className="bottom-panel-main">
+            {moduleVisibility.canUseSensorTester ? (
+              <SensorEventTester
+                cameraFeeds={dashboardData.cameraFeeds}
+                devices={dashboardData.devices}
+                onCreateEvent={ingestSensorEvent}
+                onEventCreated={(event) =>
+                  setDashboardData((currentData) => {
+                    const sensorEvents = [event, ...currentData.sensorEvents]
 
-                  return {
-                    ...currentData,
-                    incidents: buildIncidentsFromSensorEvents(sensorEvents, currentData.devices),
-                    sensorEvents,
-                  }
-                })
-              }
-            />
-          ) : null}
+                    return {
+                      ...currentData,
+                      incidents: buildIncidentsFromSensorEvents(sensorEvents, currentData.devices),
+                      sensorEvents,
+                    }
+                  })
+                }
+              />
+            ) : null}
 
-          {moduleVisibility.canViewSensorEvents ? <SensorEventList events={dashboardData.sensorEvents} /> : null}
+            {moduleVisibility.canViewSensorEvents ? <SensorEventList events={dashboardData.sensorEvents} /> : null}
 
-          <Card className="timeline-placeholder">
-            <CardHeader
-              header={<Text weight="semibold">RF / Timeline</Text>}
-              description={<Text size={200}>Waterfall ve zaman cizelgesi icin ayrilmis alt panel</Text>}
-            />
-            <div className="timeline-grid" aria-hidden="true" />
-          </Card>
+            <Card className="timeline-placeholder">
+              <CardHeader
+                header={<Text weight="semibold">RF / Timeline</Text>}
+                description={<Text size={200}>Waterfall ve zaman cizelgesi icin ayrilmis alt panel</Text>}
+              />
+              <div className="timeline-grid" aria-hidden="true" />
+            </Card>
+          </div>
         </section>
       </main>
     </FluentProvider>

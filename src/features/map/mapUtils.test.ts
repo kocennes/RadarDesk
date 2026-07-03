@@ -7,6 +7,7 @@ import {
   getDeviceBearingLine,
   getFeaturedIncidentOverlay,
   getMapCenter,
+  getMapZoom,
   getRangeMeters,
 } from './mapUtils'
 
@@ -39,6 +40,23 @@ describe('map utilities', () => {
 
   it('returns a default center when no devices exist', () => {
     expect(getMapCenter([])).toEqual([41.0082, 28.9784])
+  })
+
+  it('zooms closer when devices are clustered in the same local area', () => {
+    expect(getMapZoom(devices)).toBe(14)
+  })
+
+  it('zooms out when devices are spread across a wider area', () => {
+    const wideAreaDevices = [
+      devices[0],
+      {
+        ...devices[1],
+        latitude: devices[1].latitude + 0.12,
+        longitude: devices[1].longitude + 0.12,
+      },
+    ]
+
+    expect(getMapZoom(wideAreaDevices)).toBe(11)
   })
 
   it('places alert overlays on their source device coordinates', () => {

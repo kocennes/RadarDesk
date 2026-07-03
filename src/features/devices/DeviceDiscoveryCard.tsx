@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Badge, Button, Card, CardHeader, Checkbox, Field, Input, Text } from '@fluentui/react-components'
 import { ListState } from '../../components/ui/ListState'
+import { ButtonInfo } from '../../components/ui/ButtonInfo'
 import type { Device, DeviceType, DiscoveredDevice } from '../../types/domain'
 import type { DeviceRegistrationResult } from './deviceRegistration'
 import { formatCapabilities, ingestModeLabel, profileLabel, rawSourceLabel } from './deviceProfiles'
@@ -312,17 +313,26 @@ export function DeviceDiscoveryCard({ discoveredDevices, onRegisterDevice, onDev
           {successMessage ? <div className="form-success">{successMessage}</div> : null}
 
           <div className="wizard-actions">
-            <Button disabled={currentStepIndex === 0 || isSaving} type="button" onClick={goBack}>
-              Geri
-            </Button>
+            <div className="button-with-info">
+              <Button disabled={currentStepIndex === 0 || isSaving} type="button" onClick={goBack}>
+                Geri
+              </Button>
+              <ButtonInfo label="Kurulum sihirbazinda bir onceki adima doner; girilen bilgiler korunur." />
+            </div>
             {currentStep === 'summary' ? (
-              <Button appearance="primary" disabled={!canContinue || isSaving} type="submit">
-                {isSaving ? 'Kaydediliyor' : 'Kaydet'}
-              </Button>
+              <div className="button-with-info">
+                <Button appearance="primary" disabled={!canContinue || isSaving} type="submit">
+                  {isSaving ? 'Kaydediliyor' : 'Kaydet'}
+                </Button>
+                <ButtonInfo label="Secilen discovery cihazini verilen saha adi ve guvenli mock konumla kayitli cihazlara ekler." />
+              </div>
             ) : (
-              <Button appearance="primary" disabled={!canContinue || isSaving} type="button" onClick={goNext}>
-                Ileri
-              </Button>
+              <div className="button-with-info">
+                <Button appearance="primary" disabled={!canContinue || isSaving} type="button" onClick={goNext}>
+                  Ileri
+                </Button>
+                <ButtonInfo label="Mevcut adim dogrulamasini gecerse kurulum sihirbazinda sonraki adima ilerler." />
+              </div>
             )}
           </div>
         </form>

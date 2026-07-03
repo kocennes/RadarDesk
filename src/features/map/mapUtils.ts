@@ -36,6 +36,35 @@ export function getMapCenter(devices: Device[]): LatLngTuple {
   return [total.latitude / devices.length, total.longitude / devices.length]
 }
 
+export function getMapZoom(devices: Device[]): number {
+  if (devices.length === 0) {
+    return 14
+  }
+
+  const center = getMapCenter(devices)
+  const farthestDeviceDistanceMeters = Math.max(
+    ...devices.map((device) => getDistanceMeters(center, [device.latitude, device.longitude])),
+  )
+
+  if (farthestDeviceDistanceMeters <= 800) {
+    return 15
+  }
+
+  if (farthestDeviceDistanceMeters <= 1_600) {
+    return 14
+  }
+
+  if (farthestDeviceDistanceMeters <= 3_500) {
+    return 13
+  }
+
+  if (farthestDeviceDistanceMeters <= 7_000) {
+    return 12
+  }
+
+  return 11
+}
+
 export function getRangeMeters(device: Device): number {
   return device.rangeKm * 1000
 }
@@ -114,6 +143,24 @@ function getAveragePosition(devices: Device[]): LatLngTuple {
   )
 
   return [total.latitude / devices.length, total.longitude / devices.length]
+}
+
+function getDistanceMeters(first: LatLngTuple, second: LatLngTuple): number {
+  const earthRadiusMeters = 6_371_000
+  const firstLatitudeRad = toRadians(first[0])
+  const secondLatitudeRad = toRadians(second[0])
+  const latitudeDeltaRad = toRadians(second[0] - first[0])
+  const longitudeDeltaRad = toRadians(second[1] - first[1])
+
+  const halfChordLength =
+    Math.sin(latitudeDeltaRad / 2) * Math.sin(latitudeDeltaRad / 2) +
+    Math.cos(firstLatitudeRad) *
+      Math.cos(secondLatitudeRad) *
+      Math.sin(longitudeDeltaRad / 2) *
+      Math.sin(longitudeDeltaRad / 2)
+  const angularDistance = 2 * Math.atan2(Math.sqrt(halfChordLength), Math.sqrt(1 - halfChordLength))
+
+  return earthRadiusMeters * angularDistance
 }
 
 function getDestinationPoint(center: LatLngTuple, distanceMeters: number, bearingDeg: number): LatLngTuple {

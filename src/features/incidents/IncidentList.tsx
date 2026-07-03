@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from 'react'
 import { Badge, Button, Card, CardHeader, Text, Textarea } from '@fluentui/react-components'
 import { ListState } from '../../components/ui/ListState'
+import { ButtonInfo } from '../../components/ui/ButtonInfo'
 import type { AlertSeverity, Incident, IncidentConfirmationLevel, IncidentStatus } from '../../types/domain'
 import { formatDisplayTime } from '../../utils/formatters'
 
@@ -64,7 +65,7 @@ export function IncidentList({ incidents, onReviewIncident }: IncidentListProps)
   }
 
   return (
-    <Card>
+    <Card className="incident-list-card">
       <CardHeader
         header={<Text weight="semibold">Olay dosyalari</Text>}
         description={<Text size={200}>Birden fazla sensor kaydindan uretilen incident ozetleri</Text>}
@@ -118,15 +119,24 @@ export function IncidentList({ incidents, onReviewIncident }: IncidentListProps)
                     />
 
                     <div className="incident-actions">
-                      <Button disabled={isPending} onClick={() => void handleReview(incident, 'reviewing')}>
-                        Incele
-                      </Button>
-                      <Button disabled={isPending} onClick={() => void handleReview(incident, 'confirmed')}>
-                        Dogrula
-                      </Button>
-                      <Button disabled={isPending} onClick={() => void handleReview(incident, 'dismissed')}>
-                        Kapat
-                      </Button>
+                      <div className="button-with-info">
+                        <Button disabled={isPending} onClick={() => void handleReview(incident, 'reviewing')}>
+                          Incele
+                        </Button>
+                        <ButtonInfo label="Incident durumunu incelemede olarak isaretler ve operator notunu kaydeder." />
+                      </div>
+                      <div className="button-with-info">
+                        <Button disabled={isPending} onClick={() => void handleReview(incident, 'confirmed')}>
+                          Dogrula
+                        </Button>
+                        <ButtonInfo label="Incident kaydini operator tarafindan dogrulanmis olay olarak isaretler." />
+                      </div>
+                      <div className="button-with-info">
+                        <Button disabled={isPending} onClick={() => void handleReview(incident, 'dismissed')}>
+                          Kapat
+                        </Button>
+                        <ButtonInfo label="Incident kaydini kapatir; olay gecmisi ve evidence referanslari korunur." />
+                      </div>
                     </div>
                   </div>
                 </article>

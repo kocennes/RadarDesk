@@ -35,18 +35,26 @@
 - [x] Frontend'de tekil sensor event listesinin yanina incident/olay dosyasi gorunumu ekle; operator notu, inceleme durumu ve evidence referanslarini gostersin.
 - [x] Incident icin lokal review overlay ekle; operator `open/reviewing/confirmed/dismissed` status ve kisa notu backend validation ile kaydedebilsin.
 - [x] False alarm azaltma hedefi icin sensor fusion karar notu yaz: tek sensor alarmi, coklu sensor dogrulamasi ve operator onayi farkli severity/guven seviyeleri uretsin.
+- [ ] Operator icin acil uyari raporu uretme ve gonderme akisi ekle; radar/kamera olaylari birlesince sistem iki cumlelik, net ve askeri tonda rapor taslagi hazirlasin.
+- [ ] Baslangic senaryosu: "ACIL UYARI: Saat 14:20'de X bolgesinde radar, 80 km/s hizla yaklasan IHA temasi tespit etmistir. Kamera hedef bolgeye yonlenmis ancak gorus zayiftir; operator olayi yuksek oncelikli incident olarak takip etmeli, ek sensor dogrulamasi ve komuta bilgilendirmesi baslatilmalidir."
 - [ ] Gercek urun arastirmasinda gecen cloud/on-prem seceneklerini deployment kararlarina bagla; varsayilan lokal/on-prem, bulut opsiyonel kalsin.
 
 ## Sonraki Asama: Canli Event, Threat Score ve Operator Odak Modu
 
 - [ ] Backend canli event yayini icin WebSocket/SSE karar notu yaz; ilk tercih SSE olabilir, cunku backend'den frontend'e tek yonlu sensor event/incident bildirimi MVP icin yeterlidir.
 - [ ] Canli event yayini tasariminda HTTP ingest sozlesmesini koru; WebSocket/SSE sadece UI'in yeni event, incident ve review degisikliklerini anlik almasi icin kullanilsin.
+- [ ] Katmanli tehdit matrisi tasarla; radar, RF/SIGINT, EO/IR, C2 ve opsiyonel countermeasure cihazlarini ayri sensor/aksiyon katmanlari olarak modelle.
+- [ ] Cihaz adapter mimarisi kararini yaz; her cihaz tipi ortak `connect`, `disconnect`, `health/status`, `capabilities` sozlesmesini kullansin, vendor/protokol detaylari backend adapter icinde kalsin.
+- [ ] Dinamik sensor entegrasyonu kuralini netlestir: musteri/proje/local kurulumda kayitli cihaz tipine gore harita katmanlari, PPI, kamera, RF waterfall ve aksiyon panelleri bos/dolu durumla sekillensin.
 - [ ] Incident correlation kurallarini gelistir: ayni proje/saha, yakin zaman penceresi, cihaz tipi uyumu, radar track id, RF frekansi ve kamera dogrulama kaniti birlikte degerlendirilsin.
 - [ ] Duplicate incident azaltma ekle; ayni track veya ayni RF/radar eslesmesi tekrar geldiginde yeni olay dosyasi acmak yerine mevcut incident guncellensin.
+- [ ] Akilli hedef siniflandirma taslagi ekle; radar hiz/boyut/track metadata'si ile RF sinyal imzasi ve kamera dogrulamasini tek `ThreatCandidate`/incident ozeti altinda birlestirsin.
 - [ ] Threat score motoru tasarla: severity, confidence, sensor cesitliligi, yaklasma yonu, menzil, zone ihlali, operator onayi ve evidence sayisindan 0-100 arasi skor uret.
 - [ ] Threat score sonucunu alarm feed, incident karti, harita sonar ve PPI panelinde tutarli goster.
+- [ ] Gorsel dogrulama mumkun kararini tasarla; radar hedefi kamera DORI/FOV identification kapsamina girdiginde operator panelinde guvenli bir "gorsel dogrulama mumkun" uyarisi gosterilsin.
 - [ ] Target-centric focus mode ekle: operator bir hedef/incident sectiginde harita, PPI, alarm feed, kamera/evidence ve incident paneli ayni hedef baglamina odaklansin.
 - [ ] Focus mode ilk surumde resizable panel gerektirmesin; secili target id/incident id state'i ile mevcut sabit paneller filtrelensin veya vurgulansin.
+- [ ] Slew-to-cue karar akisini backend kontrollu ve operator onayli tasarla; otomatik kamera yonlendirme veya aydinlatma komutlari frontend'den direkt cikmasin, audit/rate limit ve yetki kontrolleri zorunlu olsun.
 
 ## Radar UI ve Gercek Cihaz Entegrasyon Taktikleri
 
@@ -57,11 +65,22 @@
 - [ ] PTZ kamera yonlendirme komutu frontend'den direkt gonderilmesin; backend tarafinda allowlist cihaz, yetki, rate limit ve audit log ile kontrollu command endpointi tasarlansin.
 - [ ] Kamera pan/tilt hesaplamasi icin hedef konumu ile kamera konumu arasinda bearing/mesafe donusum katmani ekle; ilk versiyonda mock koordinat ve test PTZ adapter kullan.
 - [ ] Gercek PTZ/ONVIF entegrasyonu icin credential, RTSP URL ve vendor protokol detaylari sadece backend config/env tarafinda kalsin; frontend'e command sonucu ve guvenli metadata donsun.
+- [ ] Kamera FOV/DORI katmanlarini haritada goster; detection/recognition/identification menzilleri cihaz config'inden gelen guvenli metadata ile seffaf sektorler olarak cizilsin.
+- [ ] Kamera DORI/FOV hesaplamasinda gercek musteri koordinati veya hassas saha verisi kullanmadan once mock/default koordinatla matematik ve UI davranisini test et.
+- [ ] RF/SIGINT waterfall paneli tasarla; frekans gucu/dBm benzeri normalize mock spektrum verisini Canvas uzerinde goster, ham IQ veya hassas RF payload'ini frontend state'ine alma.
+- [ ] RF waterfall canli akisinda Web Worker kullan; backend'den gelen sade spektrum frame modeli worker'da islenip Canvas'a aktarilsin.
+- [ ] Countermeasure/jammer UI karari yaz; gercek bastirma/tetikleme komutu eklenmeden once yalnizca mock/simule durum, yasal risk notu ve yetki modeliyle planlansin.
+- [ ] Countermeasure aksiyonu icin "slide to arm/activate", geri sayim, iki asamali operator + supervisor onayi, rate limit ve audit log gereksinimlerini dokumante et.
 - [ ] Canli event yukunde tarayiciyi rahatlatmak icin Web Worker karari yaz; WebSocket/SSE dinleme, koordinat donusumu ve filtreleme worker icinde yapilip UI'a sade cizim modeli gonderilsin.
 - [ ] Worker kullanildiginda ana thread'e sadece goruntulenecek hedef listesi, incident ozeti ve render komutlari aktarilsin; ham radar/RF/kamera payload'i UI state'ine alinmasin.
 - [ ] Protokol uyumlu mock server/simulator yol haritasi ekle; TypeScript streamer korunurken ileride Python veya Node ile UDP/WebSocket/JSON formatlarini taklit eden ayri simulator eklenebilsin.
+- [ ] TypeScript tabanli UDP/JSON radar simulatoru ekle; sentetik hedef id, koordinat, hiz ve timestamp uretip backend'in izinli lokal listener'ina gondersin.
+- [ ] Backend tarafinda UDP radar listener/adapter tasarla; gelen simulator paketlerini validate edip ham payload'i UI'a acmadan normalize `SensorEvent` sozlesmesine cevirsin.
 - [ ] Gercek radar ICD dokumani geldikten sonra ham protokol parser katmani tasarla; ASTERIX Cat 010/040 veya vendor ham byte formatlari backend sinirinda normalize SensorEvent JSON'una cevrilsin.
+- [ ] Ham radar byte parser icin sentetik Buffer fixture ve unit testleri ekle; eksik paket, uzunluk, hedef sayisi, mesafe ve status bit maskesi gibi durumlar dogrulansin.
 - [ ] Ham protokol parser sonucunda kodun geri kalani ham byte/hex gormesin; sadece typed `SensorEvent` ve `Incident` sozlesmeleriyle calissin.
+- [ ] Kamera canli goruntu denemesi icin backend kontrollu RTSP -> WebRTC kopru karari yaz; MediaMTX gibi adapterlar sadece lokal/on-prem opsiyon olarak degerlendirilsin, RTSP URL ve credential frontend'e cikmasin.
+- [ ] WebRTC kamera denemesinde frontend'e sadece guvenli stream id/durum metadata'si donsun; gercek medya kaynagi, credential ve vendor endpointleri backend config/env tarafinda kalsin.
 - [ ] Ilk hafta entegrasyon yol haritasini uygula: ICD isteme, simulatoru calistirma, canli event hattini kurma, mock hedefleri haritada/PPI'da oynatma, kontrollu kamera snapshot/WebRTC denemesi.
 
 ## Ileri Harita ve Radar Track Gelistirmeleri
@@ -70,7 +89,15 @@
 - [ ] Haritada radar hedefinin gidis yonunu kucuk ok veya vektor ile goster; hedef sadece nokta olarak kalmasin.
 - [ ] Radar metadata icinde `altitudeMeters` varsa marker veya HUD tooltip yaninda `ALT: 120m` gibi kisa etiket goster.
 - [ ] Hedef yaklasma yonundeyse renk, severity veya uyari seviyesi belirginlessin; bu kural radar metadata genisledikten sonra eklenmeli.
+- [ ] Sensor menzil katmanlarini cihaz tipine gore ayir; radar instrumented range, kamera FOV/DORI, RF kapsama ve C2 durum katmanlari Leaflet layer control ile acilip kapanabilsin.
 - [ ] Bu 2D harita iyilestirmeleri CesiumJS'e gecmeden once Leaflet uzerinde uygulanabilir kalmali.
+
+## Ileri Cihaz Kurulum ve Model Katalogu
+
+- [ ] Cihaz ekleme sihirbazini ileride model katalogu destekleyecek sekilde tasarla; cihaz tipi, model, guvenli metadata, IP/port ve konum adimlari backend validation ile ilerlesin.
+- [ ] Model katalogunda vendor credential, RTSP URL, gizli protokol detayi veya musteriye ozel hassas performans dokumani tutulmasin; sadece UI icin gerekli guvenli yetenek/maksimum menzil metadata'si yer alsin.
+- [ ] IP/port girisi aktif tarama baslatmasin; sadece izinli lokal/on-prem backend adapter config taslagi olarak validate edilsin.
+- [ ] Harita uzerinden konumlandirma sadece mock/default koordinat veya kullanicinin acikca girdigi lokal proje koordinati ile calissin; gercek musteri koordinati hassas kabul edilsin.
 
 ## En Oncelikli: Musteri/Paket/Yetki Modeli
 

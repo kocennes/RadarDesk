@@ -2,6 +2,7 @@ import { Badge, Switch, Text, Title2 } from '@fluentui/react-components'
 import type { Project } from '../../types/domain'
 import type { DashboardViewMode } from '../../features/dashboard/dashboardViewState'
 import { getDashboardViewLabel } from '../../features/dashboard/dashboardViewState'
+import { ButtonInfo } from '../ui/ButtonInfo'
 
 interface TopbarProps {
   currentProject: Project | undefined
@@ -20,11 +21,14 @@ export function Topbar({ currentProject, effectiveViewMode, isTacticalDark, onTh
         </Text>
       </div>
       <div className="topbar-actions">
-        <Switch
-          checked={isTacticalDark}
-          label="Tactical Dark"
-          onChange={(_, data) => onThemeModeChange(data.checked)}
-        />
+        <div className="button-with-info">
+          <Switch
+            checked={isTacticalDark}
+            label="Tactical Dark"
+            onChange={(_, data) => onThemeModeChange(data.checked)}
+          />
+          <ButtonInfo label="Operasyon ekranini koyu tactical tema veya aydinlik tema arasinda degistirir." />
+        </div>
         <Badge appearance="filled" color="brand">
           {getDashboardViewLabel(effectiveViewMode)}
         </Badge>

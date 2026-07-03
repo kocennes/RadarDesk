@@ -1,5 +1,6 @@
 import { Button, Card, CardHeader, Text } from '@fluentui/react-components'
 import { useState } from 'react'
+import { ButtonInfo } from '../../components/ui/ButtonInfo'
 import type { CameraFeed, Device, SensorEvent } from '../../types/domain'
 import type { SensorEventIngestInput } from '../../services/apiClient'
 
@@ -137,14 +138,16 @@ export function SensorEventTester({
       />
       <div className="event-test-actions">
         {options.map((option) => (
-          <Button
-            appearance="secondary"
-            disabled={!option.input || pendingKey !== null}
-            key={option.key}
-            onClick={() => void handleCreateEvent(option)}
-          >
-            {pendingKey === option.key ? 'Kaydediliyor' : option.label}
-          </Button>
+          <div className="button-with-info" key={option.key}>
+            <Button
+              appearance="secondary"
+              disabled={!option.input || pendingKey !== null}
+              onClick={() => void handleCreateEvent(option)}
+            >
+              {pendingKey === option.key ? 'Kaydediliyor' : option.label}
+            </Button>
+            <ButtonInfo label={getTestEventButtonDescription(option)} />
+          </div>
         ))}
       </div>
       <div className="stack">
@@ -159,4 +162,12 @@ export function SensorEventTester({
       </div>
     </Card>
   )
+}
+
+function getTestEventButtonDescription(option: TestEventOption): string {
+  if (!option.input) {
+    return option.description
+  }
+
+  return `${option.label} backend ingest akisina ${option.input.kind} tipinde mock sensor olayi gonderir.`
 }

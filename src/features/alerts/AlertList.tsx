@@ -59,21 +59,23 @@ export function AlertList({ alerts, onSeverityFilterChange, severityFilter, view
         </Field>
       </div>
 
-      {alerts.length === 0 ? (
-        <ListState message="Bu seviyeye uyan alarm yok" />
-      ) : (
-        alerts.map((alert) => (
-          <div className={`alert-row alert-severity-${alert.severity}`} key={alert.id}>
-            <div>
-              <Text weight="semibold">{alert.title}</Text>
-              <Text className="muted" size={200}>
-                {alert.area} / {formatDisplayTime(alert.timestamp)}
-              </Text>
+      <div className="alert-list-scroll">
+        {alerts.length === 0 ? (
+          <ListState message="Bu seviyeye uyan alarm yok" />
+        ) : (
+          alerts.map((alert) => (
+            <div className={`alert-row alert-severity-${alert.severity}`} key={alert.id}>
+              <div>
+                <Text weight="semibold">{alert.title}</Text>
+                <Text className="muted" size={200}>
+                  {alert.area} / {formatDisplayTime(alert.timestamp)}
+                </Text>
+              </div>
+              <Badge color={alertSeverityColor[alert.severity]}>{alertSeverityLabel[alert.severity]}</Badge>
             </div>
-            <Badge color={alertSeverityColor[alert.severity]}>{alertSeverityLabel[alert.severity]}</Badge>
-          </div>
-        ))
-      )}
+          ))
+        )}
+      </div>
     </div>
   )
 }
