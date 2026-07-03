@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
-import { Circle, CircleMarker, MapContainer, Polyline, Popup, TileLayer } from 'react-leaflet'
+import { Circle, CircleMarker, MapContainer, Polyline, Popup, TileLayer, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { severityFromRadarTrack } from './c2Ingestion'
 import { initialIncidents, siteOrigin } from './c2MockData'
@@ -69,7 +69,12 @@ export default function NexusC2Dashboard() {
         </aside>
 
         <section className="c2-map-card" aria-label="Taktik harita">
-          <OperationsMap dashboardState={dashboardState} radarTracks={dashboardState === 'empty' ? [] : radarTracks} sigintEvents={sigintEvents} />
+          <OperationsMap
+            dashboardState={dashboardState}
+            devices={visibleDevices}
+            radarTracks={dashboardState === 'empty' ? [] : radarTracks}
+            sigintEvents={sigintEvents}
+          />
         </section>
 
         <CameraFeedCard
@@ -314,15 +319,21 @@ function DeviceList({ devices, now }: { devices: DeviceListRow[]; now: Date }) {
 
 function OperationsMap({
   dashboardState,
+  devices,
   radarTracks,
   sigintEvents,
 }: {
   dashboardState: DashboardState
+  devices: DeviceListRow[]
   radarTracks: RadarTrackEvent[]
   sigintEvents: SIGINTDetectionEvent[]
 }) {
   const plots = radarTracks.map((track) => radarToMapPlot(track))
   const center: [number, number] = [siteOrigin.latitude, siteOrigin.longitude]
+  const deviceMarkers = devices.map((device, index) => ({
+    device,
+    position: getBearingEndpoint(center, index * 48, 95 + (index % 2) * 65),
+  }))
 
   return (
     <div className="c2-map-surface">
@@ -333,6 +344,27 @@ function OperationsMap({
         />
         <Circle center={center} color="#00e5ff" fillColor="#00e5ff" fillOpacity={0.035} opacity={0.38} radius={900} weight={2} />
         <Circle center={center} color="#00e5ff" fillColor="#00e5ff" fillOpacity={0.025} opacity={0.26} radius={1500} weight={1} />
+        {deviceMarkers.map(({ device, position }) => (
+          <CircleMarker
+            center={position}
+            color={device.status === 'offline' ? '#6b7280' : '#00e5ff'}
+            fillColor={device.status === 'alarm' ? '#ff3b4f' : device.status === 'warning' ? '#ffb300' : '#14ff89'}
+            fillOpacity={0.9}
+            key={device.id}
+            radius={6}
+            weight={2}
+          >
+            <Tooltip className="c2-map-tooltip" direction="top" offset={[0, -8]} opacity={1} sticky>
+              <div className="c2-map-popup">
+                <strong>{device.id}</strong>
+                <span>{device.name}</span>
+                <span>{device.model_no}</span>
+                <span>{device.protocol} / {device.active_frequency}</span>
+                <span>STATUS {device.status.toUpperCase()}</span>
+              </div>
+            </Tooltip>
+          </CircleMarker>
+        ))}
         {sigintEvents.slice(0, 5).map((event) => {
           const endpoint = getBearingEndpoint(center, event.direction_of_arrival_deg, 1500)
 
@@ -356,6 +388,15 @@ function OperationsMap({
           return (
             <Fragment key={plot.track.target_id}>
               <CircleMarker center={position} color="#ffffff" fillColor={color} fillOpacity={0.95} radius={7} weight={2}>
+                <Tooltip className="c2-map-tooltip" direction="top" offset={[0, -10]} opacity={1} sticky>
+                  <div className="c2-map-popup">
+                    <strong>{plot.track.device_id}</strong>
+                    <span>{plot.track.model_no}</span>
+                    <span>{plot.track.protocol}</span>
+                    <span>TRACK {plot.track.target_id}</span>
+                    <span>{plot.track.velocity_mps}m/s / ALT {plot.track.altitude_meters}m</span>
+                  </div>
+                </Tooltip>
                 <Popup>
                   <div className="c2-map-popup">
                     <strong>{plot.track.target_id}</strong>
