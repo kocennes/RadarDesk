@@ -28,6 +28,7 @@ export default function NexusC2Dashboard() {
   const {
     alarms,
     cameraCommand,
+    cameraEvidences,
     dispatchMockIngest,
     latestCameraEvidence,
     normalizedEvents,
@@ -74,6 +75,7 @@ export default function NexusC2Dashboard() {
         <CameraFeedCard
           commandMetadata={cameraCommand}
           evidence={latestCameraEvidence}
+          evidences={cameraEvidences}
           onSuggestCamera={requestCameraSuggestion}
           slewToCueState={slewToCueState}
         />
@@ -359,14 +361,18 @@ function OperationsMap({
 function CameraFeedCard({
   commandMetadata,
   evidence,
+  evidences,
   onSuggestCamera,
   slewToCueState,
 }: {
   commandMetadata: CameraCommandMetadata | undefined
   evidence: CameraEvidenceEvent | undefined
+  evidences: CameraEvidenceEvent[]
   onSuggestCamera: () => void
   slewToCueState: SlewToCueState
 }) {
+  const [isEvidenceOpen, setIsEvidenceOpen] = useState(false)
+
   return (
     <section className="c2-card c2-camera-card">
       <PanelTitle
@@ -380,15 +386,52 @@ function CameraFeedCard({
         <span className="c2-camera-mode">CONF {Math.round((evidence?.confidence_score ?? 0) * 100)}%</span>
         <span className="c2-camera-class">{evidence?.threat_classification ?? 'NO_TARGET'}</span>
       </div>
-      <button className="c2-primary-button" onClick={onSuggestCamera} type="button">
-        Kamera Oner
-      </button>
+      <div className="c2-camera-actions">
+        <button className="c2-primary-button" onClick={onSuggestCamera} type="button">
+          Kamera Oner
+        </button>
+        <button className="c2-secondary-button" onClick={() => setIsEvidenceOpen((current) => !current)} type="button">
+          Evidence
+        </button>
+      </div>
       <div className={`c2-slew-state c2-slew-${slewToCueState.status}`}>
         <strong>Slew-to-Cue: {slewToCueState.status.toUpperCase()}</strong>
         <span>{slewToCueState.reason}</span>
       </div>
       {commandMetadata ? <div className="c2-command-note">{commandMetadata.command_type} / dry-run / {commandMetadata.command_id}</div> : null}
+      {isEvidenceOpen ? <CameraEvidencePanel evidences={evidences} /> : null}
     </section>
+  )
+}
+
+function CameraEvidencePanel({ evidences }: { evidences: CameraEvidenceEvent[] }) {
+  return (
+    <div className="c2-evidence-panel">
+      <div className="c2-evidence-heading">
+        <strong>Camera Evidence</strong>
+        <span>Mock snapshot referanslari</span>
+      </div>
+      <div className="c2-evidence-list c2-scroll">
+        {evidences.length === 0 ? (
+          <div className="c2-evidence-empty">Kayitli kamera kaniti yok.</div>
+        ) : (
+          evidences.map((item) => (
+            <article className="c2-evidence-row" key={`${item.device_id}-${item.start_time}`}>
+              <div className="c2-evidence-preview" aria-hidden="true">
+                {item.imaging_mode === 'THERMAL_IR' ? 'IR' : 'EO'}
+              </div>
+              <div>
+                <strong>{item.threat_classification}</strong>
+                <span>{item.device_id} / {item.model_no}</span>
+                <span>CONF {Math.round(item.confidence_score * 100)}% / FOV {item.fov_horizontal_deg} deg</span>
+                {item.detected_plate ? <span>PLATE {item.detected_plate}</span> : null}
+                <code>{item.evidence_snapshot_mock_url}</code>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+    </div>
   )
 }
 

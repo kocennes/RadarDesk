@@ -175,6 +175,7 @@ export function useC2IngestionState(
   return {
     alarms,
     cameraCommand,
+    cameraEvidences,
     dispatchMockIngest,
     ingestPacket,
     latestCameraEvidence,
