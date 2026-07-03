@@ -16,6 +16,7 @@ export interface SIGINTDetectionEvent {
   device_id: string
   model_no: string
   protocol: 'TCP_RAW_STREAM'
+  timestamp?: string
   center_frequency_mhz: number
   bandwidth_mhz: number
   signal_strength_dbm: number

@@ -60,6 +60,7 @@ function isSigintDetectionEvent(value: unknown): value is SIGINTDetectionEvent {
     isString(value.device_id) &&
     isString(value.model_no) &&
     value.protocol === 'TCP_RAW_STREAM' &&
+    (value.timestamp === undefined || isIsoDate(value.timestamp)) &&
     isFiniteNumber(value.center_frequency_mhz) &&
     isFiniteNumber(value.bandwidth_mhz) &&
     isFiniteNumber(value.signal_strength_dbm) &&

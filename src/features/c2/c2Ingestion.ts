@@ -34,7 +34,7 @@ export function normalizeRadarTrack(event: RadarTrackEvent): NormalizedSensorEve
 }
 
 export function normalizeSigint(event: SIGINTDetectionEvent): NormalizedSensorEvent {
-  const timestamp = new Date().toISOString()
+  const timestamp = event.timestamp ?? new Date().toISOString()
 
   return {
     device_id: event.device_id,
@@ -82,11 +82,13 @@ export function alarmFromRadarTrack(event: RadarTrackEvent): AlarmLog {
 }
 
 export function alarmFromSigint(event: SIGINTDetectionEvent): AlarmLog {
+  const timestamp = event.timestamp ?? new Date().toISOString()
+
   return {
-    id: `ALR-SIG-${Date.now().toString().slice(-6)}`,
+    id: `ALR-SIG-${timestamp}`,
     severity: severityFromSigint(event),
     source: `${event.device_id} / ${event.center_frequency_mhz.toFixed(1)}MHz`,
-    timestamp: new Date().toISOString(),
+    timestamp,
     title: `${event.modulation_type} RF detection`,
   }
 }

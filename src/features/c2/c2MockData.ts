@@ -17,12 +17,22 @@ export const initialRadarTracks: RadarTrackEvent[] = [
   createRadarTrackEvent({ heading_degrees: 42, latitudeOffset: 0.0032, longitudeOffset: 0.0048, rcs_dbsm: -13.4, target_id: 'TRK-9042', velocity_mps: 24 }),
   createRadarTrackEvent({ heading_degrees: 316, latitudeOffset: -0.0028, longitudeOffset: 0.0029, rcs_dbsm: -18.2, target_id: 'TRK-1447', velocity_mps: 12 }),
   createRadarTrackEvent({ heading_degrees: 81, latitudeOffset: 0.0012, longitudeOffset: -0.0041, rcs_dbsm: -9.8, target_id: 'TRK-3881', velocity_mps: 18 }),
+  createRadarTrackEvent({
+    heading_degrees: 118,
+    latitudeOffset: -0.0042,
+    longitudeOffset: -0.0021,
+    rcs_dbsm: -19.6,
+    target_id: 'TRK-OLD-221',
+    timestamp: hoursAgo(31),
+    velocity_mps: 11,
+  }),
 ]
 
 export const initialSigintEvents: SIGINTDetectionEvent[] = [
   createSigintEvent({ center_frequency_mhz: 2412, direction_of_arrival_deg: 58, duration_seconds: 18, modulation_type: 'OFDM', signal_strength_dbm: -61 }),
   createSigintEvent({ center_frequency_mhz: 5805, direction_of_arrival_deg: 284, duration_seconds: 9, modulation_type: 'FHSS', signal_strength_dbm: -68 }),
   createSigintEvent({ center_frequency_mhz: 915, direction_of_arrival_deg: 132, duration_seconds: 6, modulation_type: 'FSK', signal_strength_dbm: -76 }),
+  createSigintEvent({ center_frequency_mhz: 433, direction_of_arrival_deg: 211, duration_seconds: 14, modulation_type: 'FSK', signal_strength_dbm: -73, timestamp: hoursAgo(29) }),
 ]
 
 export const initialCameraEvidences: CameraEvidenceEvent[] = [
@@ -42,6 +52,14 @@ export const initialCameraEvidences: CameraEvidenceEvent[] = [
     imaging_mode: 'DAYLIGHT',
     model_no: 'BIS-ANPR-CIV',
     threat_classification: 'SUSPICIOUS_CIVILIAN',
+  }),
+  createCameraEvidenceEvent({
+    confidence_score: 0.79,
+    evidence_snapshot_mock_url: '/mock/evidence/thermal-history-014.jpg',
+    fov_horizontal_deg: 42,
+    imaging_mode: 'THERMAL_IR',
+    start_time: hoursAgo(30),
+    threat_classification: 'HUMAN_INTRUSION',
   }),
 ]
 
@@ -91,6 +109,7 @@ export function createSigintEvent(overrides: Partial<SIGINTDetectionEvent> = {})
     modulation_type: overrides.modulation_type ?? (randomInt(2) === 0 ? 'OFDM' : 'FHSS'),
     protocol: 'TCP_RAW_STREAM',
     signal_strength_dbm: overrides.signal_strength_dbm ?? -52 - randomInt(32),
+    timestamp: overrides.timestamp ?? new Date().toISOString(),
   }
 }
 
@@ -144,6 +163,10 @@ function incident(
 
 function minutesAgo(minutes: number): string {
   return new Date(Date.now() - minutes * 60000).toISOString()
+}
+
+function hoursAgo(hours: number): string {
+  return new Date(Date.now() - hours * 3600000).toISOString()
 }
 
 function randomInt(max: number): number {

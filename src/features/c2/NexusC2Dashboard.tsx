@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Circle, CircleMarker, MapContainer, Polyline, Popup, TileLayer, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { severityFromRadarTrack } from './c2Ingestion'
@@ -52,7 +53,13 @@ export default function NexusC2Dashboard() {
   const selectedCameraEvidences = selectedCamera
     ? cameraEvidences.filter((evidenceItem) => evidenceItem.device_id === selectedCamera.id)
     : cameraEvidences
-  const selectedCameraEvidence = selectedCameraEvidences[0] ?? latestCameraEvidence
+  const activeRadarTracks = radarTracks.filter((track) => isWithinLast24Hours(track.timestamp, now))
+  const archivedRadarTracks = radarTracks.filter((track) => !isWithinLast24Hours(track.timestamp, now))
+  const activeSigintEvents = sigintEvents.filter((event) => isWithinLast24Hours(event.timestamp, now))
+  const archivedSigintEvents = sigintEvents.filter((event) => !isWithinLast24Hours(event.timestamp, now))
+  const activeCameraEvidences = selectedCameraEvidences.filter((evidenceItem) => isWithinLast24Hours(evidenceItem.start_time, now))
+  const archivedCameraEvidences = selectedCameraEvidences.filter((evidenceItem) => !isWithinLast24Hours(evidenceItem.start_time, now))
+  const selectedCameraEvidence = activeCameraEvidences[0] ?? selectedCameraEvidences[0] ?? latestCameraEvidence
 
   return (
     <main className="c2-shell">
@@ -80,8 +87,8 @@ export default function NexusC2Dashboard() {
           <OperationsMap
             dashboardState={dashboardState}
             devices={visibleDevices}
-            radarTracks={dashboardState === 'empty' ? [] : radarTracks}
-            sigintEvents={sigintEvents}
+            radarTracks={dashboardState === 'empty' ? [] : activeRadarTracks}
+            sigintEvents={activeSigintEvents}
           />
         </section>
 
@@ -89,7 +96,8 @@ export default function NexusC2Dashboard() {
           cameraDevices={cameraDevices}
           commandMetadata={cameraCommand}
           evidence={selectedCameraEvidence}
-          evidences={selectedCameraEvidences}
+          archivedEvidences={archivedCameraEvidences}
+          evidences={activeCameraEvidences}
           onSuggestCamera={requestCameraSuggestion}
           onSelectCamera={setSelectedCameraId}
           selectedCameraId={selectedCamera?.id ?? selectedCameraId}
@@ -133,12 +141,12 @@ export default function NexusC2Dashboard() {
       </section>
 
       <section className="c2-secondary-grid" aria-label="Teknik lab ve sinyal analizi">
-        <RadarPpiPanel radarTracks={radarTracks} />
+        <RadarPpiPanel archivedRadarTracks={archivedRadarTracks} radarTracks={activeRadarTracks} />
         <section className="c2-lab-column">
           <SensorEventTester onCreateEvent={dispatchMockIngest} />
           <SensorEventList normalizedEvents={normalizedEvents} />
         </section>
-        <RfTimeline sigintEvents={sigintEvents} />
+        <RfTimeline archivedSigintEvents={archivedSigintEvents} sigintEvents={activeSigintEvents} />
       </section>
 
       <section className="c2-admin-grid" aria-label="Kurulum ve saha yonetimi">
@@ -431,6 +439,7 @@ function OperationsMap({
 }
 
 function CameraFeedCard({
+  archivedEvidences,
   cameraDevices,
   commandMetadata,
   evidence,
@@ -440,6 +449,7 @@ function CameraFeedCard({
   selectedCameraId,
   slewToCueState,
 }: {
+  archivedEvidences: CameraEvidenceEvent[]
   cameraDevices: DeviceListRow[]
   commandMetadata: CameraCommandMetadata | undefined
   evidence: CameraEvidenceEvent | undefined
@@ -496,7 +506,7 @@ function CameraFeedCard({
         <span>{slewToCueState.reason}</span>
       </div>
       {commandMetadata ? <div className="c2-command-note">{commandMetadata.command_type} / dry-run / {commandMetadata.command_id}</div> : null}
-      {isEvidenceOpen ? <CameraEvidencePanel evidences={evidences} onClose={() => setIsEvidenceOpen(false)} /> : null}
+      {isEvidenceOpen ? <CameraEvidencePanel archivedEvidences={archivedEvidences} evidences={evidences} onClose={() => setIsEvidenceOpen(false)} /> : null}
     </section>
   )
 }
@@ -570,23 +580,39 @@ function CameraEvidenceRail({ evidences, onOpen }: { evidences: CameraEvidenceEv
   )
 }
 
-function CameraEvidencePanel({ evidences, onClose }: { evidences: CameraEvidenceEvent[]; onClose: () => void }) {
+function CameraEvidencePanel({
+  archivedEvidences,
+  evidences,
+  onClose,
+}: {
+  archivedEvidences: CameraEvidenceEvent[]
+  evidences: CameraEvidenceEvent[]
+  onClose: () => void
+}) {
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  const visibleEvidences = isHistoryOpen ? archivedEvidences : evidences
+
   return (
     <div className="c2-evidence-panel">
       <div className="c2-evidence-heading">
         <div>
-          <strong>Camera Evidence</strong>
-          <span>Mock snapshot referanslari</span>
+          <strong>{isHistoryOpen ? 'Gecmis Kamera Verileri' : 'Camera Evidence'}</strong>
+          <span>{isHistoryOpen ? '24 saati gecen snapshot ve uyari kayitlari' : 'Son 24 saat snapshot referanslari'}</span>
         </div>
-        <button aria-label="Snapshot panelini kucult" onClick={onClose} type="button">
-          Geri
-        </button>
+        <div className="c2-panel-actions">
+          <button onClick={() => setIsHistoryOpen((current) => !current)} type="button">
+            {isHistoryOpen ? 'Son 24s' : `Gecmis ${archivedEvidences.length}`}
+          </button>
+          <button aria-label="Snapshot panelini kucult" onClick={onClose} type="button">
+            Geri
+          </button>
+        </div>
       </div>
       <div className="c2-evidence-list c2-scroll">
-        {evidences.length === 0 ? (
-          <div className="c2-evidence-empty">Kayitli kamera kaniti yok.</div>
+        {visibleEvidences.length === 0 ? (
+          <div className="c2-evidence-empty">{isHistoryOpen ? 'Gecmis kamera verisi yok.' : 'Son 24 saatte kamera kaniti yok.'}</div>
         ) : (
-          evidences.map((item) => (
+          visibleEvidences.map((item) => (
             <article className="c2-evidence-row" key={`${item.device_id}-${item.start_time}`}>
               <div className="c2-evidence-preview" aria-hidden="true">
                 {item.imaging_mode === 'THERMAL_IR' ? 'IR' : 'EO'}
@@ -656,8 +682,15 @@ function IncidentList({ incidents }: { incidents: IncidentFolder[] }) {
   )
 }
 
-function RadarPpiPanel({ radarTracks }: { radarTracks: RadarTrackEvent[] }) {
+function RadarPpiPanel({
+  archivedRadarTracks,
+  radarTracks,
+}: {
+  archivedRadarTracks: RadarTrackEvent[]
+  radarTracks: RadarTrackEvent[]
+}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -728,12 +761,48 @@ function RadarPpiPanel({ radarTracks }: { radarTracks: RadarTrackEvent[] }) {
   return (
     <section className="c2-card c2-ppi-card">
       <PanelTitle
+        action={
+          <button className="c2-history-button" onClick={() => setIsHistoryOpen(true)} type="button">
+            Gecmis Veriler {archivedRadarTracks.length}
+          </button>
+        }
         info="Radar izlerini askeri PPI benzeri dairesel tarama ekraninda gosterir; canvas uzerinde sweep ve hedef noktalarini cizer."
-        subtitle={`ASTERIX tracks: ${radarTracks.length}`}
+        subtitle={`Son 24 saat ASTERIX tracks: ${radarTracks.length}`}
         title="RadarPpiPanel"
       />
       <canvas ref={canvasRef} />
+      {isHistoryOpen ? <RadarHistoryPanel onClose={() => setIsHistoryOpen(false)} radarTracks={archivedRadarTracks} /> : null}
     </section>
+  )
+}
+
+function RadarHistoryPanel({ onClose, radarTracks }: { onClose: () => void; radarTracks: RadarTrackEvent[] }) {
+  return (
+    <div className="c2-history-panel">
+      <div className="c2-history-heading">
+        <div>
+          <strong>Gecmis Radar Verileri</strong>
+          <span>24 saati gecen ASTERIX track kayitlari</span>
+        </div>
+        <button onClick={onClose} type="button">
+          Geri
+        </button>
+      </div>
+      <div className="c2-history-list c2-scroll">
+        {radarTracks.length === 0 ? (
+          <div className="c2-evidence-empty">Gecmis radar verisi yok.</div>
+        ) : (
+          radarTracks.map((track) => (
+            <article className="c2-history-row" key={`${track.target_id}-${track.timestamp}`}>
+              <strong>{track.target_id} / {track.device_id}</strong>
+              <span>{formatDateTime(track.timestamp)} / {track.protocol}</span>
+              <span>HDG {track.heading_degrees}deg / VEL {track.velocity_mps}m/s / ALT {track.altitude_meters}m</span>
+              <code>RCS {track.rcs_dbsm} dBsm / {track.model_no}</code>
+            </article>
+          ))
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -790,12 +859,25 @@ function SensorEventList({ normalizedEvents }: { normalizedEvents: NormalizedSen
   )
 }
 
-function RfTimeline({ sigintEvents }: { sigintEvents: SIGINTDetectionEvent[] }) {
+function RfTimeline({
+  archivedSigintEvents,
+  sigintEvents,
+}: {
+  archivedSigintEvents: SIGINTDetectionEvent[]
+  sigintEvents: SIGINTDetectionEvent[]
+}) {
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+
   return (
     <section className="c2-card c2-rf-card">
       <PanelTitle
+        action={
+          <button className="c2-history-button" onClick={() => setIsHistoryOpen(true)} type="button">
+            Gecmis Veriler {archivedSigintEvents.length}
+          </button>
+        }
         info="SIGINT/RF olaylarini spektrum waterfall benzeri zaman-frekans gorunumunde ozetler."
-        subtitle="TCP_RAW_STREAM spectrum waterfall"
+        subtitle="Son 24 saat TCP_RAW_STREAM spectrum waterfall"
         title="RF / Timeline"
       />
       <div className="c2-waterfall">
@@ -807,11 +889,42 @@ function RfTimeline({ sigintEvents }: { sigintEvents: SIGINTDetectionEvent[] }) 
           return <span key={`${event?.device_id ?? 'empty'}-${event?.center_frequency_mhz ?? 'none'}-${index}`} style={{ left: `${left}%`, opacity }} />
         })}
       </div>
+      {isHistoryOpen ? <RfHistoryPanel onClose={() => setIsHistoryOpen(false)} sigintEvents={archivedSigintEvents} /> : null}
     </section>
   )
 }
 
-function PanelTitle({ info, subtitle, title }: { info?: string; subtitle: string; title: string }) {
+function RfHistoryPanel({ onClose, sigintEvents }: { onClose: () => void; sigintEvents: SIGINTDetectionEvent[] }) {
+  return (
+    <div className="c2-history-panel">
+      <div className="c2-history-heading">
+        <div>
+          <strong>Gecmis RF Verileri</strong>
+          <span>24 saati gecen frekans ve DOA kayitlari</span>
+        </div>
+        <button onClick={onClose} type="button">
+          Geri
+        </button>
+      </div>
+      <div className="c2-history-list c2-scroll">
+        {sigintEvents.length === 0 ? (
+          <div className="c2-evidence-empty">Gecmis RF verisi yok.</div>
+        ) : (
+          sigintEvents.map((event) => (
+            <article className="c2-history-row" key={`${event.device_id}-${event.center_frequency_mhz}-${event.timestamp ?? event.direction_of_arrival_deg}`}>
+              <strong>{event.device_id} / {event.center_frequency_mhz}MHz</strong>
+              <span>{formatDateTime(event.timestamp)} / {event.protocol}</span>
+              <span>{event.modulation_type} / BW {event.bandwidth_mhz}MHz / RSSI {event.signal_strength_dbm}dBm</span>
+              <code>DOA {event.direction_of_arrival_deg}deg / duration {event.duration_seconds}s / {event.model_no}</code>
+            </article>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+function PanelTitle({ action, info, subtitle, title }: { action?: ReactNode; info?: string; subtitle: string; title: string }) {
   return (
     <div className="c2-panel-title">
       <div className="c2-title-row">
@@ -821,6 +934,7 @@ function PanelTitle({ info, subtitle, title }: { info?: string; subtitle: string
             i
           </button>
         ) : null}
+        {action ? <div className="c2-title-action">{action}</div> : null}
       </div>
       <span>{subtitle}</span>
     </div>
@@ -873,6 +987,36 @@ function formatClock(date: Date, timeZone?: string): string {
     second: '2-digit',
     timeZone,
   }).format(date)
+}
+
+function formatDateTime(value: string | undefined): string {
+  if (!value) {
+    return 'timestamp yok'
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return 'timestamp gecersiz'
+  }
+
+  return `${date.toLocaleDateString('tr-TR')} ${formatClock(date)}`
+}
+
+function isWithinLast24Hours(value: string | undefined, now: Date): boolean {
+  if (!value) {
+    return false
+  }
+
+  const timestamp = new Date(value).getTime()
+
+  if (Number.isNaN(timestamp)) {
+    return false
+  }
+
+  const ageMs = now.getTime() - timestamp
+
+  return ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000
 }
 
 function formatUptime(startedAt: string, now: Date): string {
