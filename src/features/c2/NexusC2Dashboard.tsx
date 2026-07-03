@@ -1,29 +1,8 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { Circle, CircleMarker, MapContainer, Polyline, Popup, TileLayer } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import {
-  alarmFromCameraEvidence,
-  alarmFromRadarTrack,
-  alarmFromSigint,
-  buildSlewToCueSuggestion,
-  createAlarmLogs,
-  normalizeCameraEvidence,
-  normalizeInitialEvents,
-  normalizeRadarTrack,
-  normalizeSigint,
-  severityFromRadarTrack,
-} from './c2Ingestion'
-import {
-  createCameraEvidenceEvent,
-  createRadarTrackEvent,
-  createSigintEvent,
-  initialCameraEvidences,
-  initialDevices,
-  initialIncidents,
-  initialRadarTracks,
-  initialSigintEvents,
-  siteOrigin,
-} from './c2MockData'
+import { severityFromRadarTrack } from './c2Ingestion'
+import { initialIncidents, siteOrigin } from './c2MockData'
 import type {
   AlarmLog,
   CameraCommandMetadata,
@@ -38,6 +17,7 @@ import type {
   SlewToCueState,
   TabKey,
 } from './c2Types'
+import { useC2IngestionState } from './useC2IngestionState'
 import './NexusC2Dashboard.css'
 
 export default function NexusC2Dashboard() {
@@ -45,121 +25,25 @@ export default function NexusC2Dashboard() {
   const [activeTab, setActiveTab] = useState<TabKey>('alerts')
   const [now, setNow] = useState<Date>(() => new Date())
   const [isProfileOpen, setIsProfileOpen] = useState(false)
-  const [radarTracks, setRadarTracks] = useState<RadarTrackEvent[]>(initialRadarTracks)
-  const [sigintEvents, setSigintEvents] = useState<SIGINTDetectionEvent[]>(initialSigintEvents)
-  const [cameraEvidences, setCameraEvidences] = useState<CameraEvidenceEvent[]>(initialCameraEvidences)
-  const [normalizedEvents, setNormalizedEvents] = useState<NormalizedSensorEvent[]>(() =>
-    normalizeInitialEvents(initialRadarTracks, initialSigintEvents, initialCameraEvidences),
-  )
-  const [alarms, setAlarms] = useState<AlarmLog[]>(() => createAlarmLogs(initialRadarTracks, initialSigintEvents, initialCameraEvidences))
-  const [cameraCommand, setCameraCommand] = useState<CameraCommandMetadata>()
-  const [slewToCueState, setSlewToCueState] = useState<SlewToCueState>(() => ({
-    reason: 'Radar/RF korelasyonu bekleniyor.',
-    status: 'idle',
-    updated_at: new Date().toISOString(),
-  }))
+  const {
+    alarms,
+    cameraCommand,
+    dispatchMockIngest,
+    latestCameraEvidence,
+    normalizedEvents,
+    radarTracks,
+    requestCameraSuggestion,
+    sigintEvents,
+    slewToCueState,
+    stats,
+    visibleDevices,
+  } = useC2IngestionState(dashboardState)
 
   useEffect(() => {
     const intervalId = window.setInterval(() => setNow(new Date()), 1000)
 
     return () => window.clearInterval(intervalId)
   }, [])
-
-  const visibleDevices = dashboardState === 'empty' ? [] : initialDevices
-  const latestCameraEvidence = cameraEvidences[0]
-  const stats = useMemo(
-    () => ({
-      activeAlarms: alarms.filter((alarmItem) => alarmItem.severity !== 'low').length,
-      criticalThreats: alarms.filter((alarmItem) => alarmItem.severity === 'critical').length,
-      onlineDevices: visibleDevices.filter((deviceItem) => deviceItem.status === 'online' || deviceItem.status === 'warning').length,
-      totalDevices: visibleDevices.length,
-    }),
-    [alarms, visibleDevices],
-  )
-
-  useEffect(() => {
-    const suggestion = buildSlewToCueSuggestion(radarTracks, sigintEvents, latestCameraEvidence)
-
-    if (!suggestion) {
-      setSlewToCueState((current) =>
-        current.status === 'idle'
-          ? current
-          : {
-              reason: 'Aktif radar/RF korelasyonu bulunamadi.',
-              status: 'idle',
-              updated_at: new Date().toISOString(),
-            },
-      )
-      return
-    }
-
-    setCameraCommand((current) => (current?.target_id === suggestion.command.target_id ? current : suggestion.command))
-    setSlewToCueState((current) =>
-      current.target_id === suggestion.state.target_id && current.status === suggestion.state.status ? current : suggestion.state,
-    )
-  }, [latestCameraEvidence, radarTracks, sigintEvents])
-
-  function dispatchMockIngest(kind: IngestKind) {
-    if (kind === 'radar') {
-      const packet = createRadarTrackEvent()
-      setRadarTracks((current) => [packet, ...current].slice(0, 18))
-      pushNormalizedEvent(normalizeRadarTrack(packet))
-      pushAlarm(alarmFromRadarTrack(packet))
-      return
-    }
-
-    if (kind === 'rf') {
-      const packet = createSigintEvent()
-      setSigintEvents((current) => [packet, ...current].slice(0, 18))
-      pushNormalizedEvent(normalizeSigint(packet))
-      pushAlarm(alarmFromSigint(packet))
-      return
-    }
-
-    if (kind === 'thermal') {
-      const packet = createCameraEvidenceEvent()
-      setCameraEvidences((current) => [packet, ...current].slice(0, 12))
-      pushNormalizedEvent(normalizeCameraEvidence(packet))
-      pushAlarm(alarmFromCameraEvidence(packet))
-      return
-    }
-
-    pushNormalizedEvent({
-      device_id: 'BIS-C2-01',
-      id: `EVT-C2-${Date.now().toString().slice(-6)}`,
-      payload_summary: 'C2 heartbeat: gateway nominal / local ingestion bus active',
-      protocol: 'HTTPS_SSE',
-      severity: 'low',
-      source_type: 'c2',
-      timestamp: new Date().toISOString(),
-    })
-  }
-
-  function pushNormalizedEvent(event: NormalizedSensorEvent) {
-    setNormalizedEvents((current) => [event, ...current].slice(0, 32))
-  }
-
-  function pushAlarm(alarm: AlarmLog) {
-    setAlarms((current) => [alarm, ...current].slice(0, 28))
-  }
-
-  function handleCameraSuggest() {
-    setCameraCommand({
-      command_id: `CMD-${Date.now().toString().slice(-6)}`,
-      command_type: 'ptz_slew_to_track',
-      device_id: latestCameraEvidence?.device_id ?? 'BIS-CAM-02',
-      dry_run: true,
-      requested_at: new Date().toISOString(),
-      target_id: radarTracks[0]?.target_id ?? 'TRK-LOCAL',
-      trigger_source: 'operator',
-    })
-    setSlewToCueState({
-      reason: 'Operator kamera yonlendirme onerisi olusturdu.',
-      status: 'suggested',
-      target_id: radarTracks[0]?.target_id ?? 'TRK-LOCAL',
-      updated_at: new Date().toISOString(),
-    })
-  }
 
   return (
     <main className="c2-shell">
@@ -190,7 +74,7 @@ export default function NexusC2Dashboard() {
         <CameraFeedCard
           commandMetadata={cameraCommand}
           evidence={latestCameraEvidence}
-          onSuggestCamera={handleCameraSuggest}
+          onSuggestCamera={requestCameraSuggestion}
           slewToCueState={slewToCueState}
         />
       </section>

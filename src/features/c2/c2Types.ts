@@ -101,3 +101,21 @@ export interface SiteOrigin {
   latitude: number
   longitude: number
 }
+
+export type C2IngestPacket =
+  | {
+      kind: 'radar'
+      payload: RadarTrackEvent
+    }
+  | {
+      kind: 'rf'
+      payload: SIGINTDetectionEvent
+    }
+  | {
+      kind: 'thermal'
+      payload: CameraEvidenceEvent
+    }
+  | {
+      kind: 'c2'
+      payload: NormalizedSensorEvent
+    }
