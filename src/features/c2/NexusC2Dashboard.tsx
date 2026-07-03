@@ -92,6 +92,14 @@ interface CameraCommandMetadata {
   requested_at: string
   target_id: string
   device_id: string
+  trigger_source: 'operator' | 'auto-correlation'
+}
+
+interface SlewToCueState {
+  status: 'idle' | 'suggested' | 'tracking' | 'verified'
+  reason: string
+  target_id?: string
+  updated_at: string
 }
 
 const siteOrigin = {
@@ -158,6 +166,11 @@ export default function NexusC2Dashboard() {
   )
   const [alarms, setAlarms] = useState<AlarmLog[]>(() => createAlarmLogs(initialRadarTracks, initialSigintEvents, initialCameraEvidences))
   const [cameraCommand, setCameraCommand] = useState<CameraCommandMetadata>()
+  const [slewToCueState, setSlewToCueState] = useState<SlewToCueState>(() => ({
+    reason: 'Radar/RF korelasyonu bekleniyor.',
+    status: 'idle',
+    updated_at: new Date().toISOString(),
+  }))
 
   useEffect(() => {
     const intervalId = window.setInterval(() => setNow(new Date()), 1000)
@@ -176,6 +189,28 @@ export default function NexusC2Dashboard() {
     }),
     [alarms, visibleDevices],
   )
+
+  useEffect(() => {
+    const suggestion = buildSlewToCueSuggestion(radarTracks, sigintEvents, latestCameraEvidence)
+
+    if (!suggestion) {
+      setSlewToCueState((current) =>
+        current.status === 'idle'
+          ? current
+          : {
+              reason: 'Aktif radar/RF korelasyonu bulunamadi.',
+              status: 'idle',
+              updated_at: new Date().toISOString(),
+            },
+      )
+      return
+    }
+
+    setCameraCommand((current) => (current?.target_id === suggestion.command.target_id ? current : suggestion.command))
+    setSlewToCueState((current) =>
+      current.target_id === suggestion.state.target_id && current.status === suggestion.state.status ? current : suggestion.state,
+    )
+  }, [latestCameraEvidence, radarTracks, sigintEvents])
 
   function dispatchMockIngest(kind: IngestKind) {
     if (kind === 'radar') {
@@ -229,6 +264,13 @@ export default function NexusC2Dashboard() {
       dry_run: true,
       requested_at: new Date().toISOString(),
       target_id: radarTracks[0]?.target_id ?? 'TRK-LOCAL',
+      trigger_source: 'operator',
+    })
+    setSlewToCueState({
+      reason: 'Operator kamera yonlendirme onerisi olusturdu.',
+      status: 'suggested',
+      target_id: radarTracks[0]?.target_id ?? 'TRK-LOCAL',
+      updated_at: new Date().toISOString(),
     })
   }
 
@@ -258,7 +300,12 @@ export default function NexusC2Dashboard() {
           <OperationsMap dashboardState={dashboardState} radarTracks={dashboardState === 'empty' ? [] : radarTracks} sigintEvents={sigintEvents} />
         </section>
 
-        <CameraFeedCard commandMetadata={cameraCommand} evidence={latestCameraEvidence} onSuggestCamera={handleCameraSuggest} />
+        <CameraFeedCard
+          commandMetadata={cameraCommand}
+          evidence={latestCameraEvidence}
+          onSuggestCamera={handleCameraSuggest}
+          slewToCueState={slewToCueState}
+        />
       </section>
 
       <section className="c2-alerts-grid" aria-label="Alarm ve olay akisi">
@@ -542,10 +589,12 @@ function CameraFeedCard({
   commandMetadata,
   evidence,
   onSuggestCamera,
+  slewToCueState,
 }: {
   commandMetadata: CameraCommandMetadata | undefined
   evidence: CameraEvidenceEvent | undefined
   onSuggestCamera: () => void
+  slewToCueState: SlewToCueState
 }) {
   return (
     <section className="c2-card c2-camera-card">
@@ -563,6 +612,10 @@ function CameraFeedCard({
       <button className="c2-primary-button" onClick={onSuggestCamera} type="button">
         Kamera Oner
       </button>
+      <div className={`c2-slew-state c2-slew-${slewToCueState.status}`}>
+        <strong>Slew-to-Cue: {slewToCueState.status.toUpperCase()}</strong>
+        <span>{slewToCueState.reason}</span>
+      </div>
       {commandMetadata ? <div className="c2-command-note">{commandMetadata.command_type} / dry-run / {commandMetadata.command_id}</div> : null}
     </section>
   )
@@ -890,6 +943,51 @@ function alarmFromCameraEvidence(event: CameraEvidenceEvent): AlarmLog {
     source: `${event.device_id} / ${event.imaging_mode}`,
     timestamp: event.start_time,
     title: `${event.threat_classification} camera evidence`,
+  }
+}
+
+function buildSlewToCueSuggestion(
+  radarTracks: RadarTrackEvent[],
+  sigintEvents: SIGINTDetectionEvent[],
+  cameraEvidence: CameraEvidenceEvent | undefined,
+): { command: CameraCommandMetadata; state: SlewToCueState } | undefined {
+  const tacticalTrack = radarTracks.find((track) => severityFromRadarTrack(track) === 'critical' || severityFromRadarTrack(track) === 'high')
+  const supportingRf = tacticalTrack
+    ? sigintEvents.find((event) => Math.abs(event.direction_of_arrival_deg - tacticalTrack.heading_degrees) <= 35)
+    : undefined
+
+  if (!tacticalTrack && !supportingRf) {
+    return undefined
+  }
+
+  const targetId = tacticalTrack?.target_id ?? `RF-${supportingRf?.center_frequency_mhz.toFixed(0) ?? 'LOCAL'}`
+  const hasAiVerification =
+    cameraEvidence !== undefined &&
+    cameraEvidence.confidence_score >= 0.78 &&
+    (cameraEvidence.threat_classification === 'DRONE' || cameraEvidence.threat_classification === 'MILITARY_VEHICLE')
+  const status: SlewToCueState['status'] = hasAiVerification ? 'verified' : supportingRf ? 'tracking' : 'suggested'
+  const reason = hasAiVerification
+    ? `Kamera AI ${cameraEvidence?.threat_classification} sinifini ${Math.round((cameraEvidence?.confidence_score ?? 0) * 100)}% guvenle dogruladi.`
+    : supportingRf
+      ? `Radar izi RF DOA ile desteklendi; kamera ${targetId} hedefine dry-run yonlendirme modunda.`
+      : `Radar tehdidi ${targetId} icin kamera yonlendirme onerisi uretti.`
+
+  return {
+    command: {
+      command_id: `AUTO-${targetId}`,
+      command_type: 'ptz_slew_to_track',
+      device_id: cameraEvidence?.device_id ?? 'BIS-CAM-02',
+      dry_run: true,
+      requested_at: new Date().toISOString(),
+      target_id: targetId,
+      trigger_source: 'auto-correlation',
+    },
+    state: {
+      reason,
+      status,
+      target_id: targetId,
+      updated_at: new Date().toISOString(),
+    },
   }
 }
 

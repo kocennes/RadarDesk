@@ -788,6 +788,46 @@ body {
   white-space: nowrap;
 }
 
+.c2-slew-state {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid var(--c2-border);
+  border-left-width: 4px;
+  border-radius: 6px;
+  background: #08111f;
+}
+
+.c2-slew-state strong,
+.c2-slew-state span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.c2-slew-state strong {
+  font-size: 11px;
+}
+
+.c2-slew-state span {
+  color: var(--c2-muted);
+  font-size: 10px;
+}
+
+.c2-slew-idle {
+  border-left-color: #94a3b8;
+}
+
+.c2-slew-suggested,
+.c2-slew-tracking {
+  border-left-color: var(--c2-amber);
+}
+
+.c2-slew-verified {
+  border-left-color: var(--c2-green);
+}
+
 .c2-alarm-list {
   display: grid;
   grid-auto-rows: minmax(58px, auto);
