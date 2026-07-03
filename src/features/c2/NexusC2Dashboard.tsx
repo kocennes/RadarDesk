@@ -25,6 +25,7 @@ export default function NexusC2Dashboard() {
   const [activeTab, setActiveTab] = useState<TabKey>('alerts')
   const [now, setNow] = useState<Date>(() => new Date())
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [selectedCameraId, setSelectedCameraId] = useState('BIS-CAM-02')
   const {
     alarms,
     cameraCommand,
@@ -45,6 +46,13 @@ export default function NexusC2Dashboard() {
 
     return () => window.clearInterval(intervalId)
   }, [])
+
+  const cameraDevices = visibleDevices.filter((device) => device.protocol === 'RTSP_H264')
+  const selectedCamera = cameraDevices.find((device) => device.id === selectedCameraId) ?? cameraDevices[0]
+  const selectedCameraEvidences = selectedCamera
+    ? cameraEvidences.filter((evidenceItem) => evidenceItem.device_id === selectedCamera.id)
+    : cameraEvidences
+  const selectedCameraEvidence = selectedCameraEvidences[0] ?? latestCameraEvidence
 
   return (
     <main className="c2-shell">
@@ -78,10 +86,13 @@ export default function NexusC2Dashboard() {
         </section>
 
         <CameraFeedCard
+          cameraDevices={cameraDevices}
           commandMetadata={cameraCommand}
-          evidence={latestCameraEvidence}
-          evidences={cameraEvidences}
+          evidence={selectedCameraEvidence}
+          evidences={selectedCameraEvidences}
           onSuggestCamera={requestCameraSuggestion}
+          onSelectCamera={setSelectedCameraId}
+          selectedCameraId={selectedCamera?.id ?? selectedCameraId}
           slewToCueState={slewToCueState}
         />
       </section>
@@ -420,19 +431,27 @@ function OperationsMap({
 }
 
 function CameraFeedCard({
+  cameraDevices,
   commandMetadata,
   evidence,
   evidences,
+  onSelectCamera,
   onSuggestCamera,
+  selectedCameraId,
   slewToCueState,
 }: {
+  cameraDevices: DeviceListRow[]
   commandMetadata: CameraCommandMetadata | undefined
   evidence: CameraEvidenceEvent | undefined
   evidences: CameraEvidenceEvent[]
+  onSelectCamera: (cameraId: string) => void
   onSuggestCamera: () => void
+  selectedCameraId: string
   slewToCueState: SlewToCueState
 }) {
   const [isEvidenceOpen, setIsEvidenceOpen] = useState(false)
+  const [isCameraPickerOpen, setIsCameraPickerOpen] = useState(false)
+  const selectedCamera = cameraDevices.find((device) => device.id === selectedCameraId)
 
   return (
     <section className="c2-card c2-camera-card">
@@ -454,17 +473,72 @@ function CameraFeedCard({
         <button className="c2-primary-button" onClick={onSuggestCamera} type="button">
           Kamera Oner
         </button>
+        <button className="c2-secondary-button" onClick={() => setIsCameraPickerOpen((current) => !current)} type="button">
+          Kameralar
+        </button>
         <button className="c2-secondary-button" onClick={() => setIsEvidenceOpen((current) => !current)} type="button">
           Evidence
         </button>
       </div>
+      {isCameraPickerOpen ? (
+        <CameraPickerPanel
+          cameraDevices={cameraDevices}
+          onClose={() => setIsCameraPickerOpen(false)}
+          onSelectCamera={(cameraId) => {
+            onSelectCamera(cameraId)
+            setIsCameraPickerOpen(false)
+          }}
+          selectedCameraId={selectedCamera?.id ?? selectedCameraId}
+        />
+      ) : null}
       <div className={`c2-slew-state c2-slew-${slewToCueState.status}`}>
-        <strong>Slew-to-Cue: {slewToCueState.status.toUpperCase()}</strong>
+        <strong>{selectedCamera?.name ?? selectedCameraId} / Slew-to-Cue: {slewToCueState.status.toUpperCase()}</strong>
         <span>{slewToCueState.reason}</span>
       </div>
       {commandMetadata ? <div className="c2-command-note">{commandMetadata.command_type} / dry-run / {commandMetadata.command_id}</div> : null}
       {isEvidenceOpen ? <CameraEvidencePanel evidences={evidences} onClose={() => setIsEvidenceOpen(false)} /> : null}
     </section>
+  )
+}
+
+function CameraPickerPanel({
+  cameraDevices,
+  onClose,
+  onSelectCamera,
+  selectedCameraId,
+}: {
+  cameraDevices: DeviceListRow[]
+  onClose: () => void
+  onSelectCamera: (cameraId: string) => void
+  selectedCameraId: string
+}) {
+  return (
+    <div className="c2-camera-picker-panel">
+      <div className="c2-camera-picker-heading">
+        <div>
+          <strong>Var Olan Kameralar</strong>
+          <span>Gormek istedigin feed'i sec</span>
+        </div>
+        <button aria-label="Kamera listesini kapat" onClick={onClose} type="button">
+          Kapat
+        </button>
+      </div>
+      <div className="c2-camera-picker-list c2-scroll">
+        {cameraDevices.map((camera) => (
+          <button
+            className={camera.id === selectedCameraId ? 'is-selected' : ''}
+            key={camera.id}
+            onClick={() => onSelectCamera(camera.id)}
+            type="button"
+          >
+            <strong>{camera.name}</strong>
+            <span>{camera.id} / {camera.model_no}</span>
+            <span>{camera.protocol} / {camera.status.toUpperCase()}</span>
+          </button>
+        ))}
+        {cameraDevices.length === 0 ? <div className="c2-evidence-empty">Kayitli kamera yok.</div> : null}
+      </div>
+    </div>
   )
 }
 

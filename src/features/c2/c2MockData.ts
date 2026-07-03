@@ -36,9 +36,11 @@ export const initialCameraEvidences: CameraEvidenceEvent[] = [
   createCameraEvidenceEvent({
     confidence_score: 0.72,
     detected_plate: '06 BIS 042',
+    device_id: 'BIS-LPR-02',
     evidence_snapshot_mock_url: '/mock/evidence/anpr-vehicle-017.jpg',
     fov_horizontal_deg: 54,
     imaging_mode: 'DAYLIGHT',
+    model_no: 'BIS-ANPR-CIV',
     threat_classification: 'SUSPICIOUS_CIVILIAN',
   }),
 ]
