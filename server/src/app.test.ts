@@ -94,6 +94,118 @@ describe('RadarDesk API', () => {
     expect(incidentsResponse.body.data[0].sourceDeviceIds).toEqual(['eo-003'])
   })
 
+  it('creates safe dry-run command requests through the backend command endpoint', async () => {
+    const response = await request(app)
+      .post('/api/commands/request')
+      .send({
+        commandType: 'ptz-slew',
+        deviceId: 'eo-003',
+        reason: 'Operator selected highest priority target.',
+        targetId: 'target-demo-001',
+      })
+      .expect(201)
+
+    expect(response.body.data).toMatchObject({
+      safeMessage: 'Command request accepted in dry-run mode.',
+      command: {
+        approvalState: 'operator-approved',
+        commandType: 'ptz-slew',
+        deviceId: 'eo-003',
+        projectId: 'project-001',
+        requestedBy: 'user-admin-001',
+        riskLevel: 'medium',
+        status: 'requested',
+        targetId: 'target-demo-001',
+      },
+    })
+    expect(response.body.data.command).not.toHaveProperty('rtspUrl')
+    expect(response.body.data.command).not.toHaveProperty('vendorEndpoint')
+
+    const commandId = response.body.data.command.id
+    const commandResponse = await request(app).get(`/api/commands/${commandId}`).expect(200)
+
+    expect(commandResponse.body.data).toMatchObject({
+      id: commandId,
+      commandType: 'ptz-slew',
+      deviceId: 'eo-003',
+      status: 'requested',
+    })
+  })
+
+  it('keeps countermeasure command requests pending supervisor approval in dry-run mode', async () => {
+    const response = await request(app)
+      .post('/api/commands/request')
+      .send({
+        commandType: 'countermeasure-request',
+        deviceId: 'c2-004',
+        incidentId: 'incident-demo-001',
+        reason: 'High risk incident review.',
+      })
+      .expect(201)
+
+    expect(response.body.data).toMatchObject({
+      safeMessage: 'Command request is pending supervisor approval in dry-run mode.',
+      command: {
+        approvalState: 'supervisor-required',
+        commandType: 'countermeasure-request',
+        deviceId: 'c2-004',
+        incidentId: 'incident-demo-001',
+        riskLevel: 'high',
+        status: 'pending-approval',
+      },
+    })
+  })
+
+  it('rejects command requests when the mock user lacks role or package access', async () => {
+    const response = await request(app)
+      .post('/api/commands/request')
+      .set('x-mock-user-id', 'user-viewer-001')
+      .send({
+        commandType: 'ptz-slew',
+        deviceId: 'eo-003',
+      })
+      .expect(403)
+
+    expect(response.body).toEqual({
+      error: {
+        code: 'command_not_allowed',
+        message: 'Command request is not allowed for this user or device.',
+      },
+    })
+  })
+
+  it('does not expose stored command requests outside the mock user access scope', async () => {
+    const commandResponse = await request(app)
+      .post('/api/commands/request')
+      .send({
+        commandType: 'countermeasure-request',
+        deviceId: 'c2-004',
+      })
+      .expect(201)
+
+    await request(app)
+      .get(`/api/commands/${commandResponse.body.data.command.id}`)
+      .set('x-mock-user-id', 'user-viewer-001')
+      .expect(404)
+  })
+
+  it('rejects invalid command request payloads before creating a command', async () => {
+    const response = await request(app)
+      .post('/api/commands/request')
+      .send({
+        commandType: 'raw-vendor-command',
+        deviceId: 'eo-003',
+      })
+      .expect(400)
+
+    expect(response.body).toEqual({
+      error: {
+        code: 'invalid_command_request',
+        message: 'Command type is invalid.',
+      },
+    })
+  })
+
   it('updates incident review status and operator note locally', async () => {
     const incidentsResponse = await request(app).get('/api/incidents').expect(200)
     const incidentId = incidentsResponse.body.data[0].id

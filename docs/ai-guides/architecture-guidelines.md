@@ -185,6 +185,25 @@ src/mocks/* -> src/services/mockApi.ts -> backend endpointleri -> database
 
 Bu geciste ekran componentleri once servis fonksiyonlarina baglanmali; servislerin ic kaynagi mock data iken daha sonra backend'e tasinabilir.
 
+Yeni frontend parcasi eklenirken once su eslestirme yapilmalidir:
+
+```text
+Frontend Panel / Component
+  -> Domain Model
+  -> Service/API Function
+  -> Mock Data veya Backend Endpoint
+  -> Gercek Cihaz/Database gecis notu
+```
+
+Bir ekran henuz gercek backend endpointine bagli degilse bile hangi domain modelinden beslenecegi net olmalidir. Ornek: PPI radar paneli `RadarTrack`, RF waterfall `SpectrumFrame`, kamera evidence paneli `SensorEvent.evidence`, command paneli `CommandRequest/CommandResult`, cihaz saglik paneli `DeviceHealth` modeliyle eslesmelidir.
+
+Kurallar:
+
+- Frontend componentleri kalici olarak sadece dekoratif/mock veriyle birakilmamalidir.
+- Mock veri, gelecekteki API response sozlesmesinin yerel temsilidir; gercek veriye geciste componentin temel davranisi degismemelidir.
+- Backend modeli yoksa yeni UI davranisi eklenmeden once TODO veya proje karar notuna model/endpoint ihtiyaci yazilmalidir.
+- UI cihaz tipi, paket yetkisi, alarm sonucu, threat score veya command yetkisini kendi basina uretmemeli; backend veya typed servis response'una gore render etmelidir.
+
 Backend basladiginda ayri bir klasor tercih edilebilir:
 
 ```text
@@ -222,6 +241,12 @@ Incident Correlation Service
 Realtime Delivery
   -> SSE/WebSocket ile frontend'e sadece normalize event/incident ozeti yayinlar
 
+Command Service
+  -> operator/supervisor onayi, role/access kontrolu, rate limit ve audit ile cihaz komutlarini yonetir
+
+Device Command Adapter
+  -> PTZ, kamera, termal kamera veya countermeasure gibi gercek cihaz komutlarini vendor/protokol detaylari frontend'e cikmadan uygular
+
 Frontend Render State
   -> harita, PPI, alarm feed ve camera/evidence panellerini besler
 ```
@@ -229,6 +254,94 @@ Frontend Render State
 Canli veri yogunlugu arttiginda frontend tarafinda Web Worker degerlendirilmelidir. Worker, canli event dinleme, koordinat donusumu ve filtreleme gibi isleri yapabilir; UI thread'e yalnizca cizilecek hedefler ve panel ozeti gonderilmelidir.
 
 PTZ veya cihaz komutu gibi hareketli cihaz kontrolu frontend'den direkt protokol komutu olarak cikmamalidir. Komutlar backend'de allowlist, role/yetki kontrolu, rate limit, audit log ve test adapter destegiyle ayrica tasarlanmalidir.
+
+Gercek komut katmani sensor ingest akisindan ayrilmalidir. Sensor ingest; radar, RF, kamera ve termal kaynaklardan gelen veriyi normalize edip `SensorEvent` ve `Incident` uretir. Command service ise operatorun niyetini, secili target/incident baglamini ve yetkisini alir; gerekli onay, audit, cooldown/rate limit ve cihaz sahipligi kontrollerinden sonra adapter'a guvenli komut istegi gonderir.
+
+Onerilen komut modeli:
+
+```text
+CommandRequest
+  id
+  commandType: ptz-slew / camera-preset / capture-evidence / countermeasure-request / cancel
+  targetId?
+  incidentId?
+  deviceId
+  projectId/siteId
+  requestedBy
+  approvalState: none / operator-approved / supervisor-required / approved / rejected / expired
+  status: requested / pending-approval / executing / succeeded / failed / cancelled
+  createdAt
+  updatedAt
+
+CommandAuditEntry
+  commandId
+  actorId
+  actorRole
+  action
+  reason?
+  timestamp
+  result
+```
+
+Kurallar:
+
+- Command endpointleri frontend'e credential, RTSP URL, ONVIF endpoint, jammer protokolu, RF ham payload veya vendor detayi dondurmez.
+- PTZ/camera komutlari bile backend tarafinda allowlist cihaz, customer/project/site sahipligi ve role/access group kontrolu ister.
+- Countermeasure/jammer gibi yuksek riskli aksiyonlar iki asamali operator + supervisor onayi, dry-run/test adapter, audit log, rate limit ve iptal akisi olmadan uygulanmaz.
+- ROE/rule engine ilk asamada gercek komut tetikleyen otomasyon degil, operatora onerilen aksiyon ve incident onceligi ureten karar destek katmani olarak kalir.
+
+## Musteri Gereksinim Anketi Modeli
+
+Anti-drone satis/kesif anketleri `Project` modelinin icine rastgele alan eklenerek buyutulmamali. `Project`, is/proje baglamini; `RequirementSurvey` veya `SiteAssessment`, satis oncesi teknik gereksinim cevaplarini temsil etmelidir.
+
+Onerilen ayrim:
+
+```text
+Project
+  id
+  customerId
+  name
+  site
+  status
+
+RequirementSurvey
+  id
+  projectId?
+  customerContact
+  endUserContact?
+  projectPriority
+  procurementTimeline
+  protectedSiteTypes[]
+  threatProfile
+  technicalRequirements
+  externalSystemNeeds
+  operationalRequirements
+  mappingRequirements
+  dataSecurityRequirements
+  advancedRequirements
+  declaration
+  status: draft / submitted / under-review / archived
+  createdAt
+  updatedAt
+
+SurveyAttachment
+  id
+  surveyId
+  kind: map-screenshot / kml / kmz / site-photo / authorization-doc / other
+  localPath
+  contentType
+  sizeBytes
+  hash
+  uploadedAt
+```
+
+Kurallar:
+
+- Cok secimli alanlar string metin yerine union type ve allowlist ile modellenmelidir.
+- Koordinat, tesis siniri, savunma/tespit cevresi ve KML/KMZ ekleri `mappingRequirements` icinde hassas saha verisi olarak ayrilmalidir.
+- Frekans bantlari, menzil beklentileri, kripto/uzaktan erisim ve jammer ihtiyaci gibi alanlar UI secimi olsa bile backend validation'dan gecmeden kalici kayda alinmamalidir.
+- Dosya ekleri database'e gomulmemeli; lokal dosya yolu, hash, content type, boyut ve kategori metadata'si tutulmalidir.
+- Bu model ilk etapta mock/demo cevaplarla denenmeli; gercek musteri anketleri icin auth, access control, audit ve retention kararlari hazir olmadan production veri akisi acilmamalidir.
 
 ## Buyume Kurali
 

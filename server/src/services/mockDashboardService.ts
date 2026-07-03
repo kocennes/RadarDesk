@@ -1,4 +1,5 @@
 import {
+  canRequestCommand,
   defaultMockUserId,
   getAccessScopedDashboardData,
   getEffectiveAccess,
@@ -6,7 +7,20 @@ import {
 import { createCameraFeedForRegisteredDevice } from '../../../src/features/cameras/cameraFeedRegistration'
 import { registerDiscoveredDevice } from '../../../src/features/devices/deviceRegistration'
 import { buildIncidentsFromSensorEvents } from '../../../src/features/incidents/incidentCorrelation'
-import type { Alert, CameraFeed, Device, DiscoveredDevice, EffectiveAccess, Incident, Project, SensorEvent } from '../../../src/types/domain'
+import type {
+  Alert,
+  CameraFeed,
+  CommandRequest,
+  CommandResult,
+  CommandRiskLevel,
+  CommandType,
+  Device,
+  DiscoveredDevice,
+  EffectiveAccess,
+  Incident,
+  Project,
+  SensorEvent,
+} from '../../../src/types/domain'
 import { getConfiguredCameraFeeds } from './cameraFeedProvider'
 import { getConfiguredDiscoveredDevices } from './deviceDiscoveryProvider'
 import { applyIncidentReviews, saveIncidentReview, type IncidentReviewInput } from './localIncidentReviewService'
@@ -17,8 +31,16 @@ export type RegisterDeviceInput = {
   discoveredDeviceId: string
   displayName: string
 }
+export type CommandRequestInput = {
+  commandType: CommandType
+  deviceId: string
+  incidentId?: string
+  reason?: string
+  targetId?: string
+}
 
 let registeredDevices: Device[] | null = null
+let commandRequests: CommandRequest[] = []
 
 export function getDevices(userId = defaultMockUserId): Device[] {
   const effectiveAccess = getEffectiveAccess(userId)
@@ -63,6 +85,56 @@ export function getAccess(userId = defaultMockUserId): EffectiveAccess {
   return getEffectiveAccess(userId)
 }
 
+export function createCommandRequest(input: CommandRequestInput, userId = defaultMockUserId): CommandResult | null {
+  const effectiveAccess = getEffectiveAccess(userId)
+  const device = getDevices(userId).find((candidate) => candidate.id === input.deviceId)
+  const commandAccess = canRequestCommand(effectiveAccess, device, input.commandType)
+
+  if (!commandAccess.allowed || !device) {
+    return null
+  }
+
+  const now = new Date().toISOString()
+  const command: CommandRequest = {
+    id: `command-${Date.now()}`,
+    approvalState: commandAccess.requiresSupervisorApproval ? 'supervisor-required' : 'operator-approved',
+    commandType: input.commandType,
+    createdAt: now,
+    deviceId: device.id,
+    incidentId: input.incidentId,
+    projectId: device.projectId,
+    reason: input.reason,
+    requestedBy: effectiveAccess.userId,
+    riskLevel: getCommandRiskLevel(input.commandType),
+    status: commandAccess.requiresSupervisorApproval ? 'pending-approval' : 'requested',
+    targetId: input.targetId,
+    updatedAt: now,
+  }
+
+  commandRequests = [command, ...commandRequests]
+
+  return {
+    command: cloneCommandRequest(command),
+    safeMessage: commandAccess.requiresSupervisorApproval
+      ? 'Command request is pending supervisor approval in dry-run mode.'
+      : 'Command request accepted in dry-run mode.',
+  }
+}
+
+export function getCommandRequest(commandId: string, userId = defaultMockUserId): CommandRequest | null {
+  const command = commandRequests.find((candidate) => candidate.id === commandId)
+
+  if (!command) {
+    return null
+  }
+
+  const effectiveAccess = getEffectiveAccess(userId)
+  const device = getDevices(userId).find((candidate) => candidate.id === command.deviceId)
+  const commandAccess = canRequestCommand(effectiveAccess, device, command.commandType)
+
+  return commandAccess.allowed ? cloneCommandRequest(command) : null
+}
+
 export function getDiscoveredDevices(userId = defaultMockUserId): DiscoveredDevice[] {
   const effectiveAccess = getEffectiveAccess(userId)
   const allowedDeviceTypes = new Set(effectiveAccess.allowedDeviceTypes)
@@ -70,6 +142,18 @@ export function getDiscoveredDevices(userId = defaultMockUserId): DiscoveredDevi
   return getConfiguredDiscoveredDevices()
     .filter((device) => allowedDeviceTypes.has(device.type))
     .map((device) => ({ ...device }))
+}
+
+function getCommandRiskLevel(commandType: CommandType): CommandRiskLevel {
+  if (commandType === 'countermeasure-request') {
+    return 'high'
+  }
+
+  if (commandType === 'ptz-slew' || commandType === 'camera-preset') {
+    return 'medium'
+  }
+
+  return 'low'
 }
 
 export function getSensorEvents(userId = defaultMockUserId): SensorEvent[] {
@@ -178,6 +262,7 @@ export function deleteRegisteredDevice(deviceId: string, userId = defaultMockUse
 
 export function resetRegisteredDevicesForTests() {
   registeredDevices = null
+  commandRequests = []
 }
 
 export function createProjectDraft(input: ProjectDraftInput): Project {
@@ -208,6 +293,10 @@ function getRegisteredDevices(): Device[] {
   }
 
   return registeredDevices
+}
+
+function cloneCommandRequest(command: CommandRequest): CommandRequest {
+  return { ...command }
 }
 
 function upsertRegisteredDevice(device: Device) {

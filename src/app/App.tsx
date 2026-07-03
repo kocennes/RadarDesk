@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import { Card, CardHeader, FluentProvider, Text, webDarkTheme, webLightTheme } from '@fluentui/react-components'
-import { Sidebar } from '../components/layout/Sidebar'
+import { useEffect, useState } from 'react'
+import { Button, Card, CardHeader, FluentProvider, Text, webDarkTheme, webLightTheme } from '@fluentui/react-components'
 import { Topbar } from '../components/layout/Topbar'
 import { ListState } from '../components/ui/ListState'
 import { AlarmFeedCard } from '../features/alerts/AlarmFeedCard'
@@ -29,10 +28,11 @@ import {
   fetchDashboardData,
   ingestSensorEvent,
   registerDeviceFromDiscovery,
+  requestCommand,
   updateIncidentReview,
 } from '../services/apiClient'
 import type { MockDashboardData } from '../services/mockApi'
-import type { Device } from '../types/domain'
+import type { Device, Incident } from '../types/domain'
 import './App.css'
 
 const emptyDashboardData: MockDashboardData = {
@@ -57,7 +57,7 @@ const emptyDashboardData: MockDashboardData = {
 
 type DashboardLoadState = 'loading' | 'success' | 'error'
 type DashboardThemeMode = 'light' | 'tactical-dark'
-type ResizablePanelKey = 'deviceList' | 'setup'
+type RightPanelTab = 'alerts' | 'incidents'
 
 export function App() {
   const [dashboardData, setDashboardData] = useState<MockDashboardData>(emptyDashboardData)
@@ -68,10 +68,7 @@ export function App() {
   const [deviceStatusFilter, setDeviceStatusFilter] = useState<DeviceStatusFilter>('all')
   const [alertSeverityFilter, setAlertSeverityFilter] = useState<AlertSeverityFilter>('all')
   const [actionDeviceId, setActionDeviceId] = useState<string>()
-  const [leftPanelHeights, setLeftPanelHeights] = useState<Record<ResizablePanelKey, number>>({
-    deviceList: 360,
-    setup: 420,
-  })
+  const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('alerts')
 
   useEffect(() => {
     let isCurrent = true
@@ -159,17 +156,47 @@ export function App() {
     }
   }
 
+  async function handleRequestCameraCommand(incident: Incident) {
+    const cameraDevice =
+      dashboardData.devices.find(
+        (device) => incident.sourceDeviceIds.includes(device.id) && device.type === 'eo-ir' && device.status !== 'offline',
+      ) ??
+      dashboardData.devices.find((device) => device.type === 'eo-ir' && device.status !== 'offline')
+
+    if (!cameraDevice) {
+      throw new Error('No camera device is available for command request.')
+    }
+
+    return requestCommand({
+      commandType: 'ptz-slew',
+      deviceId: cameraDevice.id,
+      incidentId: incident.id,
+      reason: `Incident ${incident.id} icin operator kamera yonlendirme onerisi.`,
+    })
+  }
+
   return (
     <FluentProvider theme={themeMode === 'tactical-dark' ? webDarkTheme : webLightTheme}>
       <main className="app-shell" data-theme={themeMode}>
-        <aside className="left-panel" aria-label="Cihaz kurulumu ve kisa menu">
-          <Sidebar />
+        <Topbar
+          currentProject={currentProject}
+          effectiveViewMode={effectiveViewMode}
+          isTacticalDark={themeMode === 'tactical-dark'}
+          controls={<StateToolbar viewMode={viewMode} onViewModeChange={setViewMode} />}
+          onThemeModeChange={(isTacticalDark) => setThemeMode(isTacticalDark ? 'tactical-dark' : 'light')}
+        />
 
-          <ResizablePanel
-            height={leftPanelHeights.setup}
-            label="Cihaz kurulum panelini boyutlandir"
-            onHeightChange={(height) => setLeftPanelHeights((current) => ({ ...current, setup: height }))}
-          >
+        <section className="metric-grid" aria-label="Dashboard ozeti">
+          <MetricCard label="Toplam cihaz" value={stats.totalDevices} tone="neutral" />
+          <MetricCard label="Online cihaz" value={stats.onlineDevices} tone="success" />
+          <MetricCard label="Aktif alarm" value={stats.activeAlerts} tone="warning" />
+          <MetricCard label="Kritik tehdit" value={stats.criticalAlerts} tone="danger" />
+        </section>
+
+        <section className="main-operation-grid" aria-label="Ana operasyon alani">
+          <aside className="left-panel" aria-label="Cihaz ve proje yonetimi">
+            {currentProject ? <ProjectIntakeCard project={currentProject} /> : null}
+
             {currentProject && moduleVisibility.canUseDeviceSetup ? (
               <DeviceDiscoveryCard
                 discoveredDevices={dashboardData.discoveredDevices}
@@ -189,7 +216,7 @@ export function App() {
                       : [...currentData.devices, device],
                   }))
                 }
-              />
+                />
             ) : (
               <Card className="project-card">
                 <CardHeader
@@ -202,15 +229,9 @@ export function App() {
                 />
               </Card>
             )}
-          </ResizablePanel>
 
           {moduleVisibility.canViewDevices ? (
-            <ResizablePanel
-              height={leftPanelHeights.deviceList}
-              label="Cihaz listesi panelini boyutlandir"
-              onHeightChange={(height) => setLeftPanelHeights((current) => ({ ...current, deviceList: height }))}
-            >
-              <Card>
+              <Card className="device-list-card">
                 <CardHeader header={<Text weight="semibold">Cihazlar</Text>} />
                 <DeviceList
                   devices={filteredDevices}
@@ -224,28 +245,10 @@ export function App() {
                   onStatusFilterChange={setDeviceStatusFilter}
                 />
               </Card>
-            </ResizablePanel>
           ) : null}
-        </aside>
+          </aside>
 
-        <section className="content">
-          <Topbar
-            currentProject={currentProject}
-            effectiveViewMode={effectiveViewMode}
-            isTacticalDark={themeMode === 'tactical-dark'}
-            onThemeModeChange={(isTacticalDark) => setThemeMode(isTacticalDark ? 'tactical-dark' : 'light')}
-          />
-          <StateToolbar viewMode={viewMode} onViewModeChange={setViewMode} />
-
-          <section className="metric-grid" aria-label="Dashboard ozeti">
-            <MetricCard label="Toplam cihaz" value={stats.totalDevices} tone="neutral" />
-            <MetricCard label="Online cihaz" value={stats.onlineDevices} tone="success" />
-            <MetricCard label="Aktif alarm" value={stats.activeAlerts} tone="warning" />
-            <MetricCard label="Kritik" value={stats.criticalAlerts} tone="danger" />
-          </section>
-
-          <section className="workspace">
-            <div className="operation-stage">
+          <section className="content" aria-label="Taktik harita">
               {moduleVisibility.canViewMap ? (
                 <Card className="map-panel">
                   <CardHeader
@@ -260,58 +263,76 @@ export function App() {
                   />
                 </Card>
               ) : null}
-            </div>
           </section>
-        </section>
 
-        <aside className="right-panel" aria-label="Kamera, alarm ve incident panelleri">
-          <section className="right-panel-top" aria-label="Kamera ve evidence">
+          <aside className="right-panel" aria-label="Kanit ve alarm yonetimi">
             {moduleVisibility.canViewCameraFeeds ? <CameraFeedCard cameraFeeds={dashboardData.cameraFeeds} /> : null}
-            {currentProject ? <ProjectIntakeCard project={currentProject} /> : null}
-          </section>
-
-          <section className="right-panel-bottom" aria-label="Alarm ve incident akisi">
             <AlarmFeedCard alerts={filteredAlerts} devices={visibleData.devices} incidents={dashboardData.incidents} />
 
-            {moduleVisibility.canViewAlerts ? (
-              <Card className="alerts-card">
-                <CardHeader header={<Text weight="semibold">Alarmlar</Text>} />
+            <section className="right-tab-card" aria-label="Alarm ve olay dosyalari">
+              <div className="panel-heading">
+                <Text weight="semibold">Alarm ve olay dosyalari</Text>
+                <Text className="muted" size={200}>
+                  Ham alarm veya korele incident gorunumu
+                </Text>
+              </div>
+              <div className="right-tabs" role="tablist" aria-label="Alarm ve incident sekmeleri">
+                <Button
+                  appearance={rightPanelTab === 'alerts' ? 'primary' : 'secondary'}
+                  role="tab"
+                  aria-selected={rightPanelTab === 'alerts'}
+                  onClick={() => setRightPanelTab('alerts')}
+                >
+                  Alarmlar
+                </Button>
+                <Button
+                  appearance={rightPanelTab === 'incidents' ? 'primary' : 'secondary'}
+                  role="tab"
+                  aria-selected={rightPanelTab === 'incidents'}
+                  onClick={() => setRightPanelTab('incidents')}
+                >
+                  Olay dosyalari
+                </Button>
+              </div>
+
+              {rightPanelTab === 'alerts' && moduleVisibility.canViewAlerts ? (
                 <AlertList
                   alerts={filteredAlerts}
                   severityFilter={alertSeverityFilter}
                   viewMode={effectiveViewMode}
                   onSeverityFilterChange={setAlertSeverityFilter}
                 />
-              </Card>
-            ) : null}
+              ) : null}
 
-            {moduleVisibility.canViewIncidents ? (
-              <IncidentList
-                incidents={dashboardData.incidents}
-                onReviewIncident={async (incident, input) => {
-                  const updatedIncident = await updateIncidentReview({
-                    incident,
-                    ...input,
-                  })
+              {rightPanelTab === 'incidents' && moduleVisibility.canViewIncidents ? (
+                <IncidentList
+                  incidents={dashboardData.incidents}
+                  onRequestCameraCommand={handleRequestCameraCommand}
+                  onReviewIncident={async (incident, input) => {
+                    const updatedIncident = await updateIncidentReview({
+                      incident,
+                      ...input,
+                    })
 
-                  setDashboardData((currentData) => ({
-                    ...currentData,
-                    incidents: currentData.incidents.map((candidate) =>
-                      candidate.id === updatedIncident.id ? updatedIncident : candidate,
-                    ),
-                  }))
-                }}
-              />
-            ) : null}
-          </section>
-        </aside>
+                    setDashboardData((currentData) => ({
+                      ...currentData,
+                      incidents: currentData.incidents.map((candidate) =>
+                        candidate.id === updatedIncident.id ? updatedIncident : candidate,
+                      ),
+                    }))
+                  }}
+                />
+              ) : null}
+            </section>
+          </aside>
+        </section>
 
         <section className="bottom-panel" aria-label="RF waterfall ve timeline alani">
           <div className="bottom-panel-ppi">
             <RadarPpiPanel events={dashboardData.sensorEvents} />
           </div>
 
-          <div className="bottom-panel-main">
+          <div className="bottom-sensor-panel">
             {moduleVisibility.canUseSensorTester ? (
               <SensorEventTester
                 cameraFeeds={dashboardData.cameraFeeds}
@@ -332,70 +353,18 @@ export function App() {
             ) : null}
 
             {moduleVisibility.canViewSensorEvents ? <SensorEventList events={dashboardData.sensorEvents} /> : null}
-
-            <Card className="timeline-placeholder">
-              <CardHeader
-                header={<Text weight="semibold">RF / Timeline</Text>}
-                description={<Text size={200}>Waterfall ve zaman cizelgesi icin ayrilmis alt panel</Text>}
-              />
-              <div className="timeline-grid" aria-hidden="true" />
-            </Card>
           </div>
+
+          <Card className="timeline-placeholder">
+            <CardHeader
+              header={<Text weight="semibold">RF / Timeline</Text>}
+              description={<Text size={200}>Waterfall ve zaman cizelgesi icin ayrilmis alt panel</Text>}
+            />
+            <div className="timeline-grid" aria-hidden="true" />
+          </Card>
         </section>
       </main>
     </FluentProvider>
-  )
-}
-
-function ResizablePanel({
-  children,
-  height,
-  label,
-  onHeightChange,
-}: {
-  children: ReactNode
-  height: number
-  label: string
-  onHeightChange: (height: number) => void
-}) {
-  const startYRef = useRef<number>(0)
-  const startHeightRef = useRef<number>(height)
-
-  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
-    event.preventDefault()
-    startYRef.current = event.clientY
-    startHeightRef.current = height
-    event.currentTarget.setPointerCapture(event.pointerId)
-  }
-
-  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
-      return
-    }
-
-    const nextHeight = Math.min(900, Math.max(240, startHeightRef.current + event.clientY - startYRef.current))
-    onHeightChange(nextHeight)
-  }
-
-  function handlePointerUp(event: ReactPointerEvent<HTMLDivElement>) {
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId)
-    }
-  }
-
-  return (
-    <div className="left-resizable-panel" style={{ height }}>
-      <div className="left-resizable-content">{children}</div>
-      <div
-        aria-label={label}
-        className="left-resize-handle"
-        role="separator"
-        tabIndex={0}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-      />
-    </div>
   )
 }
 

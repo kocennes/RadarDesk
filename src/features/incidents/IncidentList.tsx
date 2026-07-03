@@ -2,7 +2,7 @@ import { useState, type ChangeEvent } from 'react'
 import { Badge, Button, Card, CardHeader, Text, Textarea } from '@fluentui/react-components'
 import { ListState } from '../../components/ui/ListState'
 import { ButtonInfo } from '../../components/ui/ButtonInfo'
-import type { AlertSeverity, Incident, IncidentConfirmationLevel, IncidentStatus } from '../../types/domain'
+import type { AlertSeverity, CommandResult, Incident, IncidentConfirmationLevel, IncidentStatus } from '../../types/domain'
 import { formatDisplayTime } from '../../utils/formatters'
 
 type IncidentListProps = {
@@ -14,6 +14,7 @@ type IncidentListProps = {
       status: IncidentStatus
     },
   ) => Promise<void>
+  onRequestCameraCommand?: (incident: Incident) => Promise<CommandResult>
 }
 
 const severityColor: Record<AlertSeverity, 'success' | 'warning' | 'danger' | 'subtle'> = {
@@ -36,8 +37,9 @@ const confirmationLabel: Record<IncidentConfirmationLevel, string> = {
   'single-sensor': 'Tek sensor',
 }
 
-export function IncidentList({ incidents, onReviewIncident }: IncidentListProps) {
+export function IncidentList({ incidents, onRequestCameraCommand, onReviewIncident }: IncidentListProps) {
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({})
+  const [commandMessages, setCommandMessages] = useState<Record<string, string>>({})
   const [pendingIncidentId, setPendingIncidentId] = useState<string>('')
   const [errorMessage, setErrorMessage] = useState<string>('')
 
@@ -59,6 +61,27 @@ export function IncidentList({ incidents, onReviewIncident }: IncidentListProps)
       })
     } catch {
       setErrorMessage('Incident incelemesi kaydedilemedi.')
+    } finally {
+      setPendingIncidentId('')
+    }
+  }
+
+  async function handleCameraCommand(incident: Incident) {
+    if (!onRequestCameraCommand) {
+      return
+    }
+
+    setPendingIncidentId(incident.id)
+    setErrorMessage('')
+
+    try {
+      const commandResult = await onRequestCameraCommand(incident)
+      setCommandMessages((currentMessages) => ({
+        ...currentMessages,
+        [incident.id]: `${commandResult.safeMessage} ID: ${commandResult.command.id}`,
+      }))
+    } catch {
+      setErrorMessage('Kamera yonlendirme istegi olusturulamadi.')
     } finally {
       setPendingIncidentId('')
     }
@@ -118,6 +141,12 @@ export function IncidentList({ incidents, onReviewIncident }: IncidentListProps)
                       value={noteValue}
                     />
 
+                    {commandMessages[incident.id] ? (
+                      <Text block className="form-success" size={200}>
+                        {commandMessages[incident.id]}
+                      </Text>
+                    ) : null}
+
                     <div className="incident-actions">
                       <div className="button-with-info">
                         <Button disabled={isPending} onClick={() => void handleReview(incident, 'reviewing')}>
@@ -137,6 +166,14 @@ export function IncidentList({ incidents, onReviewIncident }: IncidentListProps)
                         </Button>
                         <ButtonInfo label="Incident kaydini kapatir; olay gecmisi ve evidence referanslari korunur." />
                       </div>
+                      {onRequestCameraCommand ? (
+                        <div className="button-with-info">
+                          <Button disabled={isPending} onClick={() => void handleCameraCommand(incident)}>
+                            Kamera oner
+                          </Button>
+                          <ButtonInfo label="Secili incident icin backend command modeli uzerinden PTZ dry-run istegi olusturur; gercek cihaza direkt komut gondermez." />
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </article>

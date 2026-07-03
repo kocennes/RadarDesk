@@ -25,6 +25,25 @@
 - [x] `Cihazi sil` islemi eski lokal evidence ve olay gecmisini otomatik silmemeli; kanit temizleme daha sonra ayri ve acik onayli bir aksiyon olarak tasarlanmali.
 - [x] Baglantisi kaldirilmis veya kopmus cihaz icin sorunsuz tekrar baglama akisi ekle; ayni fiziksel cihaz tekrar secilip yeni/var olan display name ile calisabilsin.
 - [x] Frontend modulleri paket yetkisine gore gizlemek yerine lokal kurulumda bagli cihazlara gore bos/dolu durum goster; cihaz yoksa ilgili panel bos durum gostersin.
+- [x] Frontend operasyon ekranini sabit katmanli C2 duzene tasarla: 64px topbar, 90px metrik seridi, uc panelli ana alan, 250px alt analiz paneli ve yalnizca ilgili kartlarda bagimsiz ic scroll.
+- [ ] Yeni frontend parcasi eklendiginde backend/domain modeli eslestirmesini zorunlu kontrol yap; panel/kart/harita katmani/command butonu hangi model, servis fonksiyonu ve gelecekteki endpoint ile beslenecekse TODO veya karar notunda gorunsun.
+
+## Bisavunma Anti-Drone Anketinden Cikan Eksikler
+
+- [x] Sitedeki anti-drone gereksinim anketini urun bosluklari icin incele; formu projeye yukleme veya kopyalama yerine karar/TODO notlarina cevir.
+- [ ] `Project` modelinden ayri `RequirementSurvey` veya `SiteAssessment` domain modelini tasarla.
+- [ ] Musteri/kontakt bilgisi ile son kullanici/operasyon birimi bilgisini ayri modelle.
+- [ ] Tesis turu, proje onceligi, tedarik zaman cizelgesi, teslimat tercihi ve saha erisim durumunu typed secim alanlari olarak planla.
+- [ ] Tehdit profili modelini tasarla: drone turleri, iletisim kanallari, aktivite sikligi, suru/otonom tehdit, daha once gozlenen sistemler.
+- [ ] Teknik gereksinim matrisini tasarla: hedef frekans bantlari, RF/radar/EO-IR menzil beklentileri, sinyal bozucu etki yaricapi ve istenen kabiliyetler.
+- [ ] Dis sistem ihtiyaclarini ayir: jammer, radar, EO/IR/termal, C2 yazilimi, mobil komuta merkezi ve mevcut guvenlik sistemleri entegrasyonu.
+- [ ] Operasyonel gereksinimleri modelle: 7/24/talep/olay bazli calisma, mobil/arac ustu/sabit/konteyner kurulum, cevresel kosullar ve egitim seviyesi.
+- [ ] Haritalama gereksinimlerini tasarla: komuta merkezi, tesis siniri, savunma cevresi, tespit cevresi, arazi tipi; gercek koordinatlari demo veriye ekleme.
+- [ ] Survey attachment modelini planla: harita ekran goruntusu, KML/KMZ, saha fotografi, yetkilendirme belgesi, mevcut sistem duzeni; dosyayi DB'ye gommeden lokal path/hash metadata tut.
+- [ ] Veri guvenligi alanlarini ekle: sifreleme/kripto ihtiyaci, VPN/offline/local network/cloud/air-gapped erisim, veri saklama suresi.
+- [ ] Ileri gereksinimler icin typed alanlar tasarla: AI siniflandirma, cok noktali merkezi izleme, NATO/STANAG, siber sertlestirme, pasif tespit, arac entegrasyonu, batarya/gunes enerjisi, yerel destek/egitim.
+- [ ] Anket endpointi tasarlanmadan once auth, access control, audit log, rate limit, dosya boyut/tur siniri ve retention politikasini yaz.
+- [ ] Ilk UI denemesi gerekirse gercek musteri bilgisi olmadan mock survey data ile calissin; form cevaplarini localStorage'a yazma.
 
 ## Arastirma Sonrasi Urun Yonu: Sensor Fusion ve Incident Dosyasi
 
@@ -45,16 +64,42 @@
 - [ ] Canli event yayini tasariminda HTTP ingest sozlesmesini koru; WebSocket/SSE sadece UI'in yeni event, incident ve review degisikliklerini anlik almasi icin kullanilsin.
 - [ ] Katmanli tehdit matrisi tasarla; radar, RF/SIGINT, EO/IR, C2 ve opsiyonel countermeasure cihazlarini ayri sensor/aksiyon katmanlari olarak modelle.
 - [ ] Cihaz adapter mimarisi kararini yaz; her cihaz tipi ortak `connect`, `disconnect`, `health/status`, `capabilities` sozlesmesini kullansin, vendor/protokol detaylari backend adapter icinde kalsin.
+- [ ] Cihaz adapter sozlesmesinde countermeasure/jammer cihazlarini sensor gibi veri ureten modullerden ayir; aksiyon uretebilen cihazlarda `arm`, `requestActivation`, `cancelActivation`, `health` ve audit alanlari backend komut katmaninda tanimli olsun.
 - [ ] Dinamik sensor entegrasyonu kuralini netlestir: musteri/proje/local kurulumda kayitli cihaz tipine gore harita katmanlari, PPI, kamera, RF waterfall ve aksiyon panelleri bos/dolu durumla sekillensin.
+- [ ] Tehdit matrisi UI'inda radar, RF/SIGINT, EO/IR kamera, C2 ve countermeasure katmanlarini ayri gorunum/filtre olarak temsil et; kullaniciya yalnizca kayitli cihaz tiplerine uygun panel ve bos durumlari goster.
 - [ ] Incident correlation kurallarini gelistir: ayni proje/saha, yakin zaman penceresi, cihaz tipi uyumu, radar track id, RF frekansi ve kamera dogrulama kaniti birlikte degerlendirilsin.
 - [ ] Duplicate incident azaltma ekle; ayni track veya ayni RF/radar eslesmesi tekrar geldiginde yeni olay dosyasi acmak yerine mevcut incident guncellensin.
 - [ ] Akilli hedef siniflandirma taslagi ekle; radar hiz/boyut/track metadata'si ile RF sinyal imzasi ve kamera dogrulamasini tek `ThreatCandidate`/incident ozeti altinda birlestirsin.
+- [ ] Fusion motorunda RF sinyal imzasi, radar track metadata'si ve kamera/termal evidence'i tek `ThreatCandidate` altinda eslestiren guvenli karar kurallarini yaz; vendor ham payload, IQ data veya gizli protokol detaylari bu modele girmesin.
+- [ ] RF AoA/TDoA tahmini konum bilgisini `ThreatCandidate` modeline opsiyonel `estimatedArea`/`errorEllipse` olarak eklemeyi tasarla; kesin hedef koordinati gibi sunulmasin, arama bolgesi olarak etiketlensin.
+- [ ] Sürü/cluster threat modeli tasarla; birden fazla radar/RF hedefi yakin konum, benzer heading/speed veya ortak incident baglamiyla tek `ThreatCluster` altinda gruplanabilsin.
+- [ ] Cluster analizinde DBSCAN/K-Means gibi algoritmalari degerlendir; ilk uygulama sentetik hedeflerle calissin ve gercek koordinat/hassas saha verisi kullanmasin.
+- [ ] Cluster UI'inda cok sayida hedefi tek tek kalabalik gostermek yerine `Suru A`, hedef sayisi, merkez/alan, ortalama heading/speed ve confidence bilgisiyle ozetle.
 - [ ] Threat score motoru tasarla: severity, confidence, sensor cesitliligi, yaklasma yonu, menzil, zone ihlali, operator onayi ve evidence sayisindan 0-100 arasi skor uret.
+- [ ] Threat score motoruna korunan bolgeye mesafe, hedefin bolgeye yaklasma vektoru, hedef sinifi, cluster buyuklugu ve gorsel/RF dogrulama katsayilarini eklemeyi tasarla.
 - [ ] Threat score sonucunu alarm feed, incident karti, harita sonar ve PPI panelinde tutarli goster.
+- [ ] Operator odak panelinde hedef/incident listesini threat score'a gore sirala; en yuksek skorlu hedef icin otomatik komut yerine operator onayli kamera yonlendirme onerisi goster.
 - [ ] Gorsel dogrulama mumkun kararini tasarla; radar hedefi kamera DORI/FOV identification kapsamina girdiginde operator panelinde guvenli bir "gorsel dogrulama mumkun" uyarisi gosterilsin.
 - [ ] Target-centric focus mode ekle: operator bir hedef/incident sectiginde harita, PPI, alarm feed, kamera/evidence ve incident paneli ayni hedef baglamina odaklansin.
 - [ ] Focus mode ilk surumde resizable panel gerektirmesin; secili target id/incident id state'i ile mevcut sabit paneller filtrelensin veya vurgulansin.
 - [ ] Slew-to-cue karar akisini backend kontrollu ve operator onayli tasarla; otomatik kamera yonlendirme veya aydinlatma komutlari frontend'den direkt cikmasin, audit/rate limit ve yetki kontrolleri zorunlu olsun.
+- [ ] ROE/rule-engine karar notu yaz; ilk surum sadece alarm uretme, incident onceligi atama ve operatora onerilen aksiyon listesi cikarma gibi guvenli karar destek davranislari uretsin.
+- [ ] ROE kurallarinda gercek PTZ, aydinlatma veya countermeasure komutu otomatik tetiklenmesin; command endpointleri operator/supervisor onayi, audit log, rate limit ve dry-run modu olmadan calismasin.
+- [ ] ROE kural editoru tasarlanacaksa kullanici girdisi allowlist'li kosul/aksiyon bloklariyla sinirlansin; serbest kod, script veya backend expression calistirma desteklenmesin.
+
+## Gercek Cihaz Komut, Yetki ve Audit Katmani
+
+- [ ] Mock data ve lokal test akisi bitmeden once gercek cihazlar icin command katmani karar notu yaz; drone, kamera, termal kamera, radar, RF node ve jammer/countermeasure cihazlari ileride gercek donanim olarak baglanacak kabul edilsin.
+- [ ] Command endpoint sozlesmesini tasarla: `POST /api/commands/ptz-slew`, `POST /api/commands/countermeasure/request`, `POST /api/commands/cancel`, `GET /api/commands/:id` gibi endpointler yalnizca backend tarafinda cihaz adapter'larina komut iletsin.
+- [x] Ilk dry-run command API dilimini ekle: `POST /api/commands/request` guvenli command metadata'si uretsin, `GET /api/commands/:id` sadece yetkili mock kullaniciya status metadata'si dondursun.
+- [ ] Gercek komutlar frontend'den dogrudan RTSP, ONVIF, vendor API, UDP/TCP veya jammer protokolune gitmesin; frontend sadece backend'e niyet/istek gondersin ve sonuc metadata'sini gorsun.
+- [ ] PTZ yonlendirme, kamera preset, termal kamera mod degisimi, aydinlatma ve countermeasure/jammer aksiyonlarini tek `CommandRequest` / `CommandResult` modeliyle normalize et.
+- [ ] Operator/supervisor onay modelini tasarla; dusuk riskli komutlar operator onayi, yuksek riskli countermeasure/jammer aksiyonlari iki asamali operator + supervisor onayi gerektirsin.
+- [ ] Komutlarda rol, customer, project/site, access group, product package ve cihaz sahipligi backend tarafinda kontrol edilsin; UI'da buton gizlemek yetki sayilmasin.
+- [ ] Komut endpointleri icin audit log tasarla: actor, role, project/site, device id, command type, request payload allowlist'i, approval chain, result, timestamp ve failure reason saklansin.
+- [ ] Komut endpointleri icin rate limit ve cooldown kurallari ekle; ayni cihaza pes pese PTZ/countermeasure istegi gonderilmesin, tum reddedilen denemeler audit'e yazilsin.
+- [ ] Dry-run/simule komut modu ekle; gercek cihaz baglanmadan once ayni endpointler test adapter ile calissin ve UI gercek komut gibi durum akisini gorebilsin.
+- [ ] Komut response'lari credential, RTSP URL, vendor endpoint, jammer frekans detayi veya ham protokol payload'i dondurmesin; yalnizca guvenli status, command id ve operatora gerekli kisa hata mesajlari donsun.
 
 ## Radar UI ve Gercek Cihaz Entegrasyon Taktikleri
 
@@ -66,11 +111,15 @@
 - [ ] Kamera pan/tilt hesaplamasi icin hedef konumu ile kamera konumu arasinda bearing/mesafe donusum katmani ekle; ilk versiyonda mock koordinat ve test PTZ adapter kullan.
 - [ ] Gercek PTZ/ONVIF entegrasyonu icin credential, RTSP URL ve vendor protokol detaylari sadece backend config/env tarafinda kalsin; frontend'e command sonucu ve guvenli metadata donsun.
 - [ ] Kamera FOV/DORI katmanlarini haritada goster; detection/recognition/identification menzilleri cihaz config'inden gelen guvenli metadata ile seffaf sektorler olarak cizilsin.
+- [ ] Kamera FOV/DORI gosteriminde sector/konik alan matematigini helper fonksiyona ayir; detection, recognition ve identification katmanlari mock/default koordinatlarla test edilsin.
 - [ ] Kamera DORI/FOV hesaplamasinda gercek musteri koordinati veya hassas saha verisi kullanmadan once mock/default koordinatla matematik ve UI davranisini test et.
 - [ ] RF/SIGINT waterfall paneli tasarla; frekans gucu/dBm benzeri normalize mock spektrum verisini Canvas uzerinde goster, ham IQ veya hassas RF payload'ini frontend state'ine alma.
+- [ ] RF/SIGINT waterfall icin backend response sozlesmesini sade `SpectrumFrame` modeli olarak tasarla; frequency bin, normalized power/dBm, timestamp ve device id disinda ham IQ veya hassas payload dondurme.
 - [ ] RF waterfall canli akisinda Web Worker kullan; backend'den gelen sade spektrum frame modeli worker'da islenip Canvas'a aktarilsin.
 - [ ] Countermeasure/jammer UI karari yaz; gercek bastirma/tetikleme komutu eklenmeden once yalnizca mock/simule durum, yasal risk notu ve yetki modeliyle planlansin.
 - [ ] Countermeasure aksiyonu icin "slide to arm/activate", geri sayim, iki asamali operator + supervisor onayi, rate limit ve audit log gereksinimlerini dokumante et.
+- [ ] Countermeasure panelinde siradan tek tikli aksiyon kullanma; ilk prototip yalnizca simule `armed`, `pending-approval`, `countdown`, `cancelled` ve `expired` durumlarini gostersin.
+- [ ] Slew-to-cue ve aydinlatma benzeri hareketli cihaz komutlarini otomatik tetikleme olarak uygulama; ilk asamada backend oneri uretsin, operator onayi ve audit olmadan komut gonderilmesin.
 - [ ] Canli event yukunde tarayiciyi rahatlatmak icin Web Worker karari yaz; WebSocket/SSE dinleme, koordinat donusumu ve filtreleme worker icinde yapilip UI'a sade cizim modeli gonderilsin.
 - [ ] Worker kullanildiginda ana thread'e sadece goruntulenecek hedef listesi, incident ozeti ve render komutlari aktarilsin; ham radar/RF/kamera payload'i UI state'ine alinmasin.
 - [ ] Protokol uyumlu mock server/simulator yol haritasi ekle; TypeScript streamer korunurken ileride Python veya Node ile UDP/WebSocket/JSON formatlarini taklit eden ayri simulator eklenebilsin.
@@ -81,21 +130,55 @@
 - [ ] Ham protokol parser sonucunda kodun geri kalani ham byte/hex gormesin; sadece typed `SensorEvent` ve `Incident` sozlesmeleriyle calissin.
 - [ ] Kamera canli goruntu denemesi icin backend kontrollu RTSP -> WebRTC kopru karari yaz; MediaMTX gibi adapterlar sadece lokal/on-prem opsiyon olarak degerlendirilsin, RTSP URL ve credential frontend'e cikmasin.
 - [ ] WebRTC kamera denemesinde frontend'e sadece guvenli stream id/durum metadata'si donsun; gercek medya kaynagi, credential ve vendor endpointleri backend config/env tarafinda kalsin.
+- [ ] Video OSD/reticle overlay tasarimini yaz; WebRTC video uzerine seffaf Canvas katmani ile yalnizca normalize hedef id, range, altitude ve confidence bilgisi cizilsin.
+- [ ] Radar hedef koordinati + kamera PTZ/FOV metadata'sini video piksel koordinatina ceviren projeksiyon helper'ini tasarla; ilk testler mock koordinat ve kaydedilmis demo frame ile yapilsin.
+- [ ] Video OSD katmaninda ham video frame, RTSP URL, ONVIF credential veya vendor endpoint frontend state'ine alinmasin; frontend sadece backend'in verdigi stream id ve overlay modelini kullansin.
+- [ ] System health paneli tasarla; radar, kamera, RF node ve countermeasure cihazlari icin normalize `DeviceHealth` modeliyle sicaklik, voltaj, guc durumu, defrost/fan/GPU gibi guvenli telemetry alanlarini goster.
+- [ ] Cihaz saglik telemetry adapter'lari icin SNMP/HTTP gibi protokolleri backend sinirinda tut; frontend'e credential, internal endpoint veya ham vendor payload dondurme.
+- [ ] Donanim durum matrisinde uyarilari garanti/performance iddiasi gibi sunmadan `normal`, `warning`, `critical`, `unknown` durumlariyla goster; esik degerleri model katalogu/config tarafindan gelsin.
 - [ ] Ilk hafta entegrasyon yol haritasini uygula: ICD isteme, simulatoru calistirma, canli event hattini kurma, mock hedefleri haritada/PPI'da oynatma, kontrollu kamera snapshot/WebRTC denemesi.
 
 ## Ileri Harita ve Radar Track Gelistirmeleri
 
 - [ ] Radar event metadata sozlesmesini genislet: `rangeMeters`, `azimuthDegrees`, `speedMps`, `altitudeMeters`, `headingDegrees` alanlari opsiyonel olarak desteklensin.
+- [ ] Radar/RF hedefleri icin 2D haritada hiz vektoru ve kisa vadeli tahmini konum gostergesi tasarla; tahminin belirsizlik icerdigi UI'da acik olsun.
 - [ ] Haritada radar hedefinin gidis yonunu kucuk ok veya vektor ile goster; hedef sadece nokta olarak kalmasin.
 - [ ] Radar metadata icinde `altitudeMeters` varsa marker veya HUD tooltip yaninda `ALT: 120m` gibi kisa etiket goster.
+- [ ] Radar metadata'sinda onceki/yeni altitude degerleri varsa marker yaninda yukseliyor/alcaliyor durumunu kucuk ok veya kisa etiketle goster.
 - [ ] Hedef yaklasma yonundeyse renk, severity veya uyari seviyesi belirginlessin; bu kural radar metadata genisledikten sonra eklenmeli.
+- [ ] 3D radar gosterimi icin CesiumJS karar notu yaz; MVP'de Leaflet 2D kalacaksa altitude/drop-line yerine etiket, vektor ve panel ozeti kullanilsin.
+- [ ] CesiumJS denenirse drone hedefi, altitude ve drop-line gosterimi yalnizca mock/demo koordinatlarla test edilsin; gercek musteri/saha koordinati kullanilmasin.
+- [ ] LOS/kor nokta analizi icin CesiumJS terrain veya lokal terrain veri karari yaz; ilk prototipte mock arazi ve demo cihaz koordinatlari kullanilsin.
+- [ ] Radar/kamera line-of-sight analizini planla; gorus disi alanlar haritada seffaf risk katmani olarak gosterilsin ve sonuclar kesin kapsama garantisi gibi sunulmasin.
+- [ ] LOS hesaplamasi agirlasirsa backend/worker tarafinda calisan sade `CoverageSector`/`BlindSpotArea` modeli uret; frontend sadece cizim katmanlarini alsin.
+- [ ] RF AoA/TDoA harita katmani tasarla; birden fazla RF node'dan gelen normalize bearing/time-difference verisiyle seffaf arama poligonu veya hata elipsi cizilsin.
+- [ ] RF AoA/TDoA hesaplamalarini helper fonksiyona ayir ve sentetik node koordinatlariyla test et; frontend'e ham IQ, hassas zamanlama payload'i veya vendor protokol detayi aktarilmasin.
 - [ ] Sensor menzil katmanlarini cihaz tipine gore ayir; radar instrumented range, kamera FOV/DORI, RF kapsama ve C2 durum katmanlari Leaflet layer control ile acilip kapanabilsin.
+- [ ] Radar model profilinden gelen guvenli maksimum/instrumented range metadata'si ile haritada otomatik radar menzil dairesi ciz; bu degerler garanti/performance iddiasi gibi sunulmasin.
 - [ ] Bu 2D harita iyilestirmeleri CesiumJS'e gecmeden once Leaflet uzerinde uygulanabilir kalmali.
+
+## Mission Replay ve Debriefing
+
+- [ ] BlackBox/mission replay karar notu yaz; radar, RF, kamera evidence, alarm, incident review ve countermeasure durum degisiklikleri zaman damgali replay event modeliyle saklansin.
+- [ ] Replay store icin PostgreSQL/TimescaleDB veya mevcut lokal event store genisletme seceneklerini karsilastir; ham medya veya hassas payload yerine event metadata, evidence referansi, hash ve actor/audit bilgisi tutulsun.
+- [ ] Frontend'e playback timeline tasarla; kullanici tarih/saat araligi secip 1x, 2x ve 4x hizda harita/PPI/incident akisini yeniden oynatabilsin.
+- [ ] Replay yayininda canli WebSocket/SSE hattindan ayri bir mod kullan; gecmis veriler frontend'e normalize replay frame olarak gitsin, ham radar/RF/kamera payload'i acilmasin.
+- [ ] Countermeasure veya operator aksiyonlari replay'de yalnizca audit kaydi ve simule durum olarak gorunsun; replay modu gercek cihaz komutu tetikleyemesin.
+
+## Offline-First Harita ve Lokal Calisma
+
+- [ ] Offline-first harita karar notu yaz; lokal/on-prem kurulumda internet yokken harita, cihaz katmanlari ve operasyon panelleri temel islevlerini korusun.
+- [ ] Lokal tile/mbtiles sunumu icin backend static tile endpointi veya tile server seceneklerini degerlendir; lisans, veri boyutu ve guncelleme sorumlulugu not edilsin.
+- [ ] Frontend PWA/service worker stratejisini tasarla; harita tile'lari, temel UI assetleri ve mock/demo operasyon verisi Cache Storage/IndexedDB ile kontrollu onbelleklensin.
+- [ ] Offline modda kullaniciya harita verisinin tarihi, kapsama alani ve senkronizasyon durumu acik gosterilsin; eksik tile veya eski veri sessizce dogruymus gibi sunulmasin.
+- [ ] Offline cache'e secret, credential, ham radar/RF payload'i, RTSP URL veya hassas musteri dokumani yazilmamasini guvenlik kuralina bagla.
 
 ## Ileri Cihaz Kurulum ve Model Katalogu
 
 - [ ] Cihaz ekleme sihirbazini ileride model katalogu destekleyecek sekilde tasarla; cihaz tipi, model, guvenli metadata, IP/port ve konum adimlari backend validation ile ilerlesin.
+- [ ] Cihaz ekleme sihirbazinda radar, kamera, RF/SIGINT node ve countermeasure tiplerini model katalogundan sectir; model secimi UI davranisini ve bos/dolu panelleri belirlesin.
 - [ ] Model katalogunda vendor credential, RTSP URL, gizli protokol detayi veya musteriye ozel hassas performans dokumani tutulmasin; sadece UI icin gerekli guvenli yetenek/maksimum menzil metadata'si yer alsin.
+- [ ] Model katalogunda kamera icin guvenli DORI/FOV metadata'si, radar icin guvenli menzil metadata'si, RF icin normalize frekans kapsami metadata'si ve countermeasure icin yalnizca simule/izin gerektiren capability flag'leri tutulsun.
 - [ ] IP/port girisi aktif tarama baslatmasin; sadece izinli lokal/on-prem backend adapter config taslagi olarak validate edilsin.
 - [ ] Harita uzerinden konumlandirma sadece mock/default koordinat veya kullanicinin acikca girdigi lokal proje koordinati ile calissin; gercek musteri koordinati hassas kabul edilsin.
 

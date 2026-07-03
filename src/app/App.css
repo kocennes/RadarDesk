@@ -1209,3 +1209,1400 @@
     padding: 20px;
   }
 }
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+}
+
+.app-shell {
+  width: 100vw;
+  height: 100vh;
+  min-height: 0;
+  display: grid;
+  grid-template-areas:
+    "topbar"
+    "metrics"
+    "main"
+    "bottom";
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 64px 90px minmax(0, 1fr) 250px;
+  gap: 10px;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.topbar {
+  grid-area: topbar;
+  display: grid;
+  grid-template-columns: minmax(240px, 0.7fr) minmax(0, 1.8fr) minmax(210px, 0.6fr);
+  height: 64px;
+  min-height: 0;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+  padding: 8px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--surface-panel-glass);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(16px);
+}
+
+.topbar-brand,
+.topbar-center,
+.topbar-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.topbar-brand {
+  justify-content: flex-start;
+}
+
+.brand-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--semantic-focus) 58%, var(--border-default));
+  border-radius: 6px;
+  background: var(--semantic-focus-bg);
+  color: var(--semantic-focus);
+  font-weight: 800;
+}
+
+.brand-copy {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.brand-copy .fui-Text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-center {
+  justify-content: center;
+}
+
+.project-select {
+  width: min(260px, 100%);
+  flex: 0 1 260px;
+}
+
+.topbar-actions {
+  justify-content: flex-end;
+}
+
+.clock-block {
+  display: grid;
+  flex: 0 0 auto;
+  justify-items: end;
+  line-height: 1.1;
+}
+
+.topbar .state-toolbar {
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 4px;
+  gap: 4px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--surface-panel-muted);
+}
+
+.topbar .state-toolbar > .fui-Text {
+  display: none;
+}
+
+.topbar .state-toolbar .fui-Button {
+  min-width: 0;
+  padding-inline: 8px;
+}
+
+.metric-grid {
+  grid-area: metrics;
+  display: grid;
+  height: 90px;
+  min-height: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  overflow: hidden;
+}
+
+.metric-card {
+  min-height: 0;
+  height: 90px;
+  overflow: hidden;
+}
+
+.main-operation-grid {
+  grid-area: main;
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(330px, 0.9fr) minmax(520px, 1.55fr) minmax(390px, 1fr);
+  gap: 10px;
+  overflow: hidden;
+}
+
+.left-panel,
+.content,
+.right-panel,
+.bottom-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.left-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) minmax(0, 0.72fr);
+  gap: 10px;
+  max-height: none;
+  overflow-y: hidden;
+}
+
+.left-panel > .fui-Card,
+.right-panel > .fui-Card,
+.right-tab-card,
+.bottom-panel > .fui-Card,
+.bottom-sensor-panel,
+.map-panel {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border-default) 82%, transparent);
+  border-radius: 8px;
+  background: var(--surface-panel-glass);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(16px);
+}
+
+.project-card {
+  overflow: hidden;
+}
+
+.project-card .form-grid {
+  gap: 8px;
+}
+
+.discovery-card {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.wizard-layout {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.wizard-steps {
+  gap: 4px;
+}
+
+.wizard-step {
+  padding: 5px 4px;
+  font-size: 11px;
+}
+
+.wizard-section {
+  min-height: 0;
+  max-height: 250px;
+  overflow: hidden;
+}
+
+.device-type-option {
+  min-height: 76px;
+  padding: 9px;
+}
+
+.device-list-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.device-list-card > .stack {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.device-list-scroll {
+  max-height: 300px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.content {
+  display: grid;
+}
+
+.map-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.map-surface,
+.leaflet-map,
+.map-loading {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.right-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 0.55fr) minmax(0, 1fr);
+  gap: 10px;
+  overflow-y: hidden;
+}
+
+.camera-preview {
+  position: relative;
+  display: grid;
+  aspect-ratio: 16 / 9;
+  place-content: center;
+  justify-items: center;
+  gap: 4px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--semantic-focus) 38%, var(--border-default));
+  border-radius: 8px;
+  background:
+    linear-gradient(0deg, rgba(86, 167, 255, 0.12), rgba(86, 167, 255, 0.02)),
+    radial-gradient(circle at 50% 48%, rgba(246, 180, 67, 0.12), transparent 34%),
+    #050c16;
+  color: #e5edf7;
+}
+
+.camera-reticle {
+  position: absolute;
+  width: 34%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(86, 167, 255, 0.56);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 999px rgba(5, 12, 22, 0.16),
+    0 0 18px rgba(86, 167, 255, 0.32);
+}
+
+.camera-row {
+  padding: 9px;
+}
+
+.alarm-feed-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.alarm-feed-list {
+  max-height: 190px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.right-tab-card {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px;
+}
+
+.panel-heading {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.right-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.right-tab-card .alerts-card,
+.right-tab-card .incident-list-card {
+  min-height: 0;
+}
+
+.right-tab-card .incident-list-card {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+}
+
+.alert-list-scroll {
+  max-height: 340px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.incident-list-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.incident-list-card > .stack {
+  max-height: 430px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
+}
+
+.bottom-panel {
+  grid-area: bottom;
+  display: grid;
+  height: 250px;
+  min-height: 0;
+  grid-template-columns: minmax(300px, 35fr) minmax(320px, 35fr) minmax(280px, 30fr);
+  gap: 10px;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.bottom-panel .fui-Card,
+.bottom-sensor-panel {
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+
+.bottom-panel-ppi {
+  min-height: 0;
+}
+
+.bottom-panel-ppi > .ppi-card,
+.ppi-surface {
+  height: 100%;
+  min-height: 0;
+}
+
+.ppi-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.ppi-canvas {
+  height: 100%;
+}
+
+.bottom-sensor-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 0;
+}
+
+.bottom-sensor-panel > .fui-Card {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bottom-sensor-panel .event-test-actions {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.bottom-sensor-panel .event-row {
+  padding: 8px 10px;
+}
+
+.bottom-sensor-panel .stack {
+  min-height: 0;
+}
+
+.bottom-sensor-panel > .fui-Card:last-child {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.bottom-sensor-panel > .fui-Card:last-child > .stack {
+  max-height: 132px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
+}
+
+.timeline-placeholder {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.timeline-grid {
+  min-height: 0;
+  height: 100%;
+}
+
+.device-list-scroll,
+.alarm-feed-list,
+.alert-list-scroll,
+.incident-list-card > .stack,
+.bottom-sensor-panel > .fui-Card:last-child > .stack,
+.left-resizable-content {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--semantic-focus) 58%, var(--text-muted)) color-mix(in srgb, var(--surface-panel-muted) 72%, transparent);
+}
+
+.device-list-scroll::-webkit-scrollbar,
+.alarm-feed-list::-webkit-scrollbar,
+.alert-list-scroll::-webkit-scrollbar,
+.incident-list-card > .stack::-webkit-scrollbar,
+.bottom-sensor-panel > .fui-Card:last-child > .stack::-webkit-scrollbar {
+  width: 10px;
+}
+
+.device-list-scroll::-webkit-scrollbar-track,
+.alarm-feed-list::-webkit-scrollbar-track,
+.alert-list-scroll::-webkit-scrollbar-track,
+.incident-list-card > .stack::-webkit-scrollbar-track,
+.bottom-sensor-panel > .fui-Card:last-child > .stack::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-panel-muted) 72%, transparent);
+}
+
+.device-list-scroll::-webkit-scrollbar-thumb,
+.alarm-feed-list::-webkit-scrollbar-thumb,
+.alert-list-scroll::-webkit-scrollbar-thumb,
+.incident-list-card > .stack::-webkit-scrollbar-thumb,
+.bottom-sensor-panel > .fui-Card:last-child > .stack::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--semantic-focus) 58%, var(--text-muted));
+  background-clip: padding-box;
+}
+
+@media (max-width: 1200px) {
+  .topbar {
+    grid-template-columns: minmax(180px, 0.8fr) minmax(0, 1.2fr) minmax(170px, 0.6fr);
+  }
+
+  .main-operation-grid {
+    grid-template-columns: minmax(290px, 0.85fr) minmax(430px, 1.2fr) minmax(330px, 0.9fr);
+  }
+}
+
+/* Final C2 layout stabilization layer.
+   Keep the browser locked to one viewport and let only tactical data panes scroll. */
+.app-shell {
+  grid-template-rows: 64px 90px minmax(0, 1fr) 250px;
+  gap: 8px;
+  padding: 8px;
+}
+
+.topbar,
+.metric-grid,
+.main-operation-grid,
+.bottom-panel {
+  min-height: 0;
+  min-width: 0;
+}
+
+.topbar {
+  grid-template-columns: minmax(220px, 0.72fr) minmax(380px, 1.7fr) minmax(210px, 0.72fr);
+  padding: 6px 10px;
+}
+
+.topbar-center {
+  gap: 8px;
+}
+
+.topbar .button-with-info {
+  flex: 0 0 auto;
+}
+
+.topbar .state-toolbar {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 420px;
+}
+
+.topbar .state-toolbar .button-with-info {
+  flex: 1 1 0;
+}
+
+.topbar .state-toolbar .fui-Button {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  padding-inline: 6px;
+  font-size: 11px;
+}
+
+.metric-grid {
+  height: 90px;
+}
+
+.metric-card {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 12px;
+}
+
+.main-operation-grid {
+  grid-template-columns: minmax(320px, 20fr) minmax(520px, 55fr) minmax(360px, 25fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.left-panel,
+.right-panel,
+.content,
+.bottom-panel,
+.bottom-panel-ppi,
+.bottom-sensor-panel {
+  min-height: 0;
+  min-width: 0;
+}
+
+.left-panel {
+  grid-template-rows: minmax(132px, 0.58fr) minmax(154px, 0.7fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.right-panel {
+  grid-template-rows: minmax(160px, 0.82fr) minmax(126px, 0.58fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.left-panel > .fui-Card,
+.right-panel > .fui-Card,
+.right-tab-card,
+.map-panel,
+.bottom-panel .fui-Card {
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.left-panel .fui-CardHeader,
+.right-panel .fui-CardHeader,
+.bottom-panel .fui-CardHeader,
+.map-panel .fui-CardHeader {
+  min-height: 0;
+}
+
+.left-panel .fui-CardHeader__description,
+.right-panel .fui-CardHeader__description,
+.bottom-panel .fui-CardHeader__description {
+  display: none;
+}
+
+.project-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.project-card .form-grid {
+  min-height: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  overflow: hidden;
+}
+
+.project-card .form-grid > .fui-Field:nth-child(3),
+.project-card .form-grid > .fui-Field:nth-child(4),
+.project-card .form-success,
+.project-card .form-button-with-info {
+  grid-column: span 1;
+}
+
+.project-card .fui-Input,
+.project-card .fui-Select {
+  min-height: 30px;
+}
+
+.project-card .form-button-with-info {
+  align-self: end;
+}
+
+.discovery-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.discovery-card .wizard-layout {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 8px;
+}
+
+.discovery-card .wizard-section {
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+
+.discovery-card .device-type-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.discovery-card .device-type-option,
+.discovery-card .discovery-row {
+  min-height: 0;
+  padding: 8px;
+}
+
+.discovery-card .wizard-info-panel,
+.discovery-card .setup-summary-row {
+  padding: 7px;
+}
+
+.device-list-card {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.device-list-scroll {
+  max-height: none;
+  height: 100%;
+  min-height: 0;
+}
+
+.device-row {
+  padding: 9px;
+}
+
+.device-action-buttons {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.map-panel {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.map-panel .map-surface {
+  min-height: 0;
+  height: 100%;
+}
+
+.right-panel > .fui-Card:first-child {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.right-panel > .fui-Card:first-child > .stack {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.camera-preview {
+  max-height: 150px;
+}
+
+.alarm-feed-card {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.alarm-feed-list {
+  max-height: none;
+  height: 100%;
+}
+
+.right-tab-card {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.right-tab-card .incident-list-card {
+  display: grid;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.right-tab-card .incident-list-card > .fui-CardHeader {
+  display: none;
+}
+
+.right-tab-card .incident-list-card > .stack,
+.alert-list-scroll {
+  max-height: none;
+  height: 100%;
+  min-height: 0;
+}
+
+.incident-row {
+  padding: 9px;
+}
+
+.incident-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.bottom-panel {
+  grid-template-columns: minmax(300px, 35fr) minmax(330px, 35fr) minmax(280px, 30fr);
+  height: 250px;
+}
+
+.ppi-surface,
+.ppi-canvas {
+  min-height: 0;
+  height: 100%;
+}
+
+.bottom-sensor-panel {
+  grid-template-rows: minmax(82px, auto) minmax(0, 1fr);
+}
+
+.bottom-sensor-panel > .fui-Card:first-child {
+  display: grid;
+  align-content: center;
+}
+
+.bottom-sensor-panel .event-test-actions {
+  gap: 6px;
+}
+
+.bottom-sensor-panel .event-test-actions .fui-Button {
+  min-width: 0;
+  height: 30px;
+  padding-inline: 6px;
+  font-size: 11px;
+}
+
+.bottom-sensor-panel > .fui-Card:last-child {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.bottom-sensor-panel > .fui-Card:last-child > .stack {
+  max-height: none;
+  height: 100%;
+  min-height: 0;
+}
+
+.timeline-placeholder {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+@media (max-height: 820px) {
+  .app-shell {
+    grid-template-rows: 60px 78px minmax(0, 1fr) 220px;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .topbar {
+    height: 60px;
+  }
+
+  .metric-grid,
+  .metric-card {
+    height: 78px;
+  }
+
+  .bottom-panel {
+    height: 220px;
+  }
+
+  .left-panel {
+    grid-template-rows: minmax(112px, 0.5fr) minmax(132px, 0.62fr) minmax(0, 1fr);
+  }
+
+  .right-panel {
+    grid-template-rows: minmax(138px, 0.76fr) minmax(104px, 0.48fr) minmax(0, 1fr);
+  }
+}
+
+/* Emergency stable layout reset.
+   The strict 100vh command-wall grid looked good on paper but fought the
+   real Fluent card contents. This version favors a stable, inspectable
+   operations dashboard: no overlap, predictable columns, internal scroll only
+   for long tactical lists, and page scroll as the outer safety valve. */
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.app-shell {
+  width: 100%;
+  min-height: 100vh;
+  height: auto;
+  display: grid;
+  grid-template-areas:
+    "topbar"
+    "metrics"
+    "main"
+    "bottom";
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto;
+  gap: 14px;
+  overflow: visible;
+  padding: 14px;
+}
+
+.topbar {
+  height: auto;
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: minmax(230px, 0.8fr) minmax(420px, 1.6fr) minmax(210px, 0.7fr);
+  align-items: center;
+  overflow: visible;
+}
+
+.topbar-brand,
+.topbar-center,
+.topbar-actions {
+  overflow: visible;
+}
+
+.topbar-center {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.topbar .state-toolbar {
+  flex: 0 1 auto;
+  max-width: none;
+}
+
+.metric-grid {
+  height: auto;
+  min-height: 90px;
+  overflow: visible;
+}
+
+.metric-card {
+  height: auto;
+  min-height: 90px;
+}
+
+.main-operation-grid {
+  display: grid;
+  grid-template-columns: minmax(330px, 0.9fr) minmax(520px, 1.35fr) minmax(390px, 1fr);
+  gap: 14px;
+  overflow: visible;
+}
+
+.left-panel,
+.right-panel,
+.content {
+  display: grid;
+  gap: 14px;
+  overflow: visible;
+}
+
+.left-panel {
+  grid-template-rows: auto auto auto;
+}
+
+.right-panel {
+  grid-template-rows: auto auto auto;
+}
+
+.left-panel > .fui-Card,
+.right-panel > .fui-Card,
+.right-tab-card,
+.map-panel,
+.bottom-panel .fui-Card {
+  min-height: auto;
+  overflow: visible;
+  padding: 16px;
+}
+
+.project-card,
+.discovery-card,
+.device-list-card,
+.alarm-feed-card,
+.incident-list-card,
+.timeline-placeholder,
+.bottom-sensor-panel > .fui-Card:last-child {
+  display: block;
+}
+
+.project-card .form-grid {
+  grid-template-columns: 1fr;
+  overflow: visible;
+}
+
+.discovery-card .wizard-layout,
+.discovery-card .wizard-section {
+  display: grid;
+  overflow: visible;
+}
+
+.device-list-scroll {
+  max-height: 360px;
+  height: auto;
+  overflow-y: auto;
+}
+
+.map-panel {
+  display: grid;
+  grid-template-rows: auto minmax(520px, 64vh);
+}
+
+.map-panel .map-surface,
+.leaflet-map,
+.map-loading {
+  min-height: 520px;
+  height: 100%;
+}
+
+.camera-preview {
+  max-height: none;
+}
+
+.right-panel > .fui-Card:first-child > .stack {
+  max-height: 230px;
+  overflow-y: auto;
+}
+
+.alarm-feed-list {
+  max-height: 260px;
+  height: auto;
+  overflow-y: auto;
+}
+
+.right-tab-card {
+  display: grid;
+  grid-template-rows: auto auto auto;
+}
+
+.right-tab-card .incident-list-card {
+  display: block;
+  padding: 0;
+}
+
+.right-tab-card .incident-list-card > .fui-CardHeader {
+  display: none;
+}
+
+.right-tab-card .incident-list-card > .stack {
+  max-height: 520px;
+  height: auto;
+  overflow-y: auto;
+}
+
+.alert-list-scroll {
+  max-height: 420px;
+  height: auto;
+  overflow-y: auto;
+}
+
+.bottom-panel {
+  display: grid;
+  height: auto;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1fr) minmax(320px, 0.9fr);
+  gap: 14px;
+  overflow: visible;
+}
+
+.bottom-panel .fui-Card,
+.bottom-sensor-panel {
+  min-height: auto;
+  overflow: visible;
+}
+
+.bottom-panel-ppi > .ppi-card {
+  min-height: 320px;
+}
+
+.ppi-surface {
+  min-height: 240px;
+  height: auto;
+}
+
+.ppi-canvas {
+  height: 240px;
+}
+
+.bottom-sensor-panel {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 14px;
+}
+
+.bottom-sensor-panel > .fui-Card:last-child > .stack {
+  max-height: 220px;
+  height: auto;
+  overflow-y: auto;
+}
+
+.timeline-placeholder {
+  min-height: 320px;
+}
+
+.timeline-grid {
+  min-height: 220px;
+  height: auto;
+}
+
+@media (max-width: 1280px) {
+  .topbar,
+  .bottom-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .main-operation-grid {
+    grid-template-columns: 300px minmax(360px, 1fr) 340px;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Keep the operational triad visible. The setup wizard must stay on the left,
+   the tactical map in the center, and evidence/alarm cards on the right. */
+.main-operation-grid {
+  align-items: start;
+  grid-template-columns: 320px minmax(420px, 1fr) 360px;
+}
+
+.left-panel {
+  position: sticky;
+  top: 14px;
+  align-self: start;
+}
+
+.content {
+  align-self: start;
+}
+
+.right-panel {
+  align-self: start;
+}
+
+.map-panel {
+  min-height: 620px;
+}
+
+.map-panel .map-surface,
+.leaflet-map,
+.map-loading {
+  min-height: 560px;
+}
+
+/* Final responsive repair pass.
+   This is intentionally placed last because earlier experiments mix locked
+   viewport grids with page-scrolling layouts. Keep the dashboard usable first. */
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.app-shell {
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+  height: auto;
+  display: grid;
+  grid-template-areas:
+    "topbar"
+    "metrics"
+    "main"
+    "bottom";
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto;
+  gap: 14px;
+  overflow: visible;
+  padding: 14px;
+}
+
+.topbar {
+  grid-area: topbar;
+  height: auto;
+  min-height: 64px;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(360px, 1.55fr) minmax(190px, 0.7fr);
+  gap: 12px;
+  overflow: visible;
+}
+
+.topbar-brand,
+.topbar-center,
+.topbar-actions {
+  min-width: 0;
+  overflow: visible;
+}
+
+.topbar-center {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.topbar-actions {
+  justify-content: flex-end;
+}
+
+.topbar .state-toolbar {
+  flex: 1 1 360px;
+  max-width: 520px;
+  overflow: visible;
+}
+
+.metric-grid {
+  grid-area: metrics;
+  height: auto;
+  min-height: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: visible;
+}
+
+.metric-card {
+  height: auto;
+  min-height: 92px;
+  overflow: hidden;
+}
+
+.main-operation-grid {
+  grid-area: main;
+  display: grid;
+  grid-template-columns: minmax(310px, 0.86fr) minmax(520px, 1.48fr) minmax(360px, 1fr);
+  gap: 14px;
+  align-items: start;
+  overflow: visible;
+}
+
+.left-panel,
+.content,
+.right-panel,
+.bottom-panel,
+.bottom-panel-ppi,
+.bottom-sensor-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+}
+
+.left-panel,
+.right-panel {
+  position: static;
+  display: grid;
+  grid-template-rows: none;
+  gap: 14px;
+  align-self: start;
+}
+
+.content {
+  display: grid;
+  align-self: start;
+}
+
+.left-panel > .fui-Card,
+.right-panel > .fui-Card,
+.right-tab-card,
+.map-panel,
+.bottom-panel .fui-Card,
+.bottom-sensor-panel {
+  min-width: 0;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+  border-radius: 8px;
+}
+
+.map-panel {
+  display: grid;
+  grid-template-rows: auto minmax(520px, 62vh);
+  min-height: 620px;
+}
+
+.map-panel .map-surface,
+.leaflet-map,
+.map-loading {
+  width: 100%;
+  min-height: 520px;
+  height: 100%;
+}
+
+.device-list-scroll {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.right-panel > .fui-Card:first-child > .stack {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.alarm-feed-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.alert-list-scroll,
+.right-tab-card .incident-list-card > .stack {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.bottom-panel {
+  grid-area: bottom;
+  display: grid;
+  height: auto;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(340px, 1fr) minmax(300px, 0.9fr);
+  gap: 14px;
+  align-items: stretch;
+  overflow: visible;
+}
+
+.bottom-sensor-panel {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 14px;
+  padding: 0;
+}
+
+.bottom-sensor-panel > .fui-Card:last-child > .stack {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.ppi-surface,
+.ppi-canvas {
+  min-height: 240px;
+  height: 240px;
+}
+
+.timeline-grid {
+  min-height: 220px;
+  height: auto;
+}
+
+@media (max-width: 1280px) {
+  .topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar-brand,
+  .topbar-center,
+  .topbar-actions {
+    justify-content: flex-start;
+  }
+
+  .main-operation-grid {
+    grid-template-columns: minmax(300px, 0.86fr) minmax(420px, 1.14fr);
+  }
+
+  .right-panel {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .right-tab-card {
+    grid-column: span 1;
+  }
+
+  .bottom-panel {
+    grid-template-columns: repeat(2, minmax(300px, 1fr));
+  }
+
+  .timeline-placeholder {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .metric-grid,
+  .main-operation-grid,
+  .right-panel,
+  .bottom-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .right-panel,
+  .right-tab-card,
+  .timeline-placeholder {
+    grid-column: auto;
+  }
+
+  .map-panel {
+    grid-template-rows: auto minmax(420px, 58vh);
+    min-height: 0;
+  }
+
+  .map-panel .map-surface,
+  .leaflet-map,
+  .map-loading {
+    min-height: 420px;
+  }
+}
+
+@media (max-width: 560px) {
+  .app-shell {
+    padding: 10px;
+  }
+
+  .topbar {
+    padding: 10px;
+  }
+
+  .topbar-center,
+  .topbar-actions,
+  .state-toolbar,
+  .event-test-actions,
+  .incident-actions,
+  .device-filters,
+  .device-type-grid,
+  .wizard-steps,
+  .right-tabs {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .topbar-center,
+  .topbar-actions,
+  .state-toolbar {
+    align-items: stretch;
+  }
+
+  .project-select,
+  .topbar .state-toolbar,
+  .topbar .button-with-info,
+  .topbar .fui-Button,
+  .right-tabs .fui-Button {
+    width: 100%;
+    max-width: none;
+  }
+
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .alert-row,
+  .incident-summary,
+  .alarm-feed-item {
+    grid-template-columns: 1fr;
+  }
+
+  .incident-badges,
+  .device-action-buttons {
+    justify-content: flex-start;
+  }
+}

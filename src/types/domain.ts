@@ -201,3 +201,49 @@ export type EffectiveAccess = {
   allowedDeviceTypes: DeviceType[]
   allowedModules: ProductModule[]
 }
+
+export type CommandType =
+  | 'ptz-slew'
+  | 'camera-preset'
+  | 'capture-evidence'
+  | 'countermeasure-request'
+  | 'cancel'
+
+export type CommandApprovalState =
+  | 'none'
+  | 'operator-approved'
+  | 'supervisor-required'
+  | 'approved'
+  | 'rejected'
+  | 'expired'
+
+export type CommandStatus =
+  | 'requested'
+  | 'pending-approval'
+  | 'executing'
+  | 'succeeded'
+  | 'failed'
+  | 'cancelled'
+
+export type CommandRiskLevel = 'low' | 'medium' | 'high'
+
+export type CommandRequest = {
+  id: string
+  commandType: CommandType
+  deviceId: string
+  projectId: string
+  requestedBy: string
+  approvalState: CommandApprovalState
+  status: CommandStatus
+  riskLevel: CommandRiskLevel
+  targetId?: string
+  incidentId?: string
+  reason?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type CommandResult = {
+  command: CommandRequest
+  safeMessage: string
+}

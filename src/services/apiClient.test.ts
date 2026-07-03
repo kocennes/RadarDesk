@@ -9,9 +9,11 @@ import { buildIncidentsFromSensorEvents } from '../features/incidents/incidentCo
 import {
   deleteDevice,
   disconnectDevice,
+  fetchCommand,
   fetchDashboardData,
   ingestSensorEvent,
   registerDeviceFromDiscovery,
+  requestCommand,
   saveProjectDraft,
   updateIncidentReview,
 } from './apiClient'
@@ -290,6 +292,110 @@ describe('apiClient', () => {
       id: incident.id,
       operatorNote: 'Yerel inceleme notu',
       status: 'dismissed',
+    })
+  })
+
+  it('posts command requests to the configured API base URL without vendor payloads', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse({
+        data: {
+          command: {
+            approvalState: 'operator-approved',
+            commandType: 'ptz-slew',
+            createdAt: '2026-07-03T12:00:00.000Z',
+            deviceId: 'eo-003',
+            id: 'command-api-001',
+            projectId: 'project-001',
+            requestedBy: 'user-admin-001',
+            riskLevel: 'medium',
+            status: 'requested',
+            updatedAt: '2026-07-03T12:00:00.000Z',
+          },
+          safeMessage: 'Command request accepted in dry-run mode.',
+        },
+      }),
+    )
+
+    const commandResult = await requestCommand(
+      {
+        commandType: 'ptz-slew',
+        deviceId: 'eo-003',
+        incidentId: 'incident-001',
+        reason: 'Operator camera recommendation.',
+      },
+      'http://localhost:4000',
+    )
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/commands/request',
+      expect.objectContaining({
+        body: JSON.stringify({
+          commandType: 'ptz-slew',
+          deviceId: 'eo-003',
+          incidentId: 'incident-001',
+          reason: 'Operator camera recommendation.',
+        }),
+        method: 'POST',
+      }),
+    )
+    expect(commandResult.command).toMatchObject({
+      commandType: 'ptz-slew',
+      deviceId: 'eo-003',
+      status: 'requested',
+    })
+    expect(commandResult.command).not.toHaveProperty('rtspUrl')
+    expect(commandResult.command).not.toHaveProperty('vendorEndpoint')
+  })
+
+  it('creates safe local dry-run command requests when no API base URL is configured', async () => {
+    const commandResult = await requestCommand(
+      {
+        commandType: 'countermeasure-request',
+        deviceId: 'c2-004',
+        incidentId: 'incident-local-001',
+      },
+      '',
+    )
+
+    expect(commandResult).toMatchObject({
+      safeMessage: 'Command request is pending supervisor approval in dry-run mode.',
+      command: {
+        approvalState: 'supervisor-required',
+        commandType: 'countermeasure-request',
+        deviceId: 'c2-004',
+        incidentId: 'incident-local-001',
+        riskLevel: 'high',
+        status: 'pending-approval',
+      },
+    })
+  })
+
+  it('fetches command status through the configured API base URL', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse({
+        data: {
+          approvalState: 'operator-approved',
+          commandType: 'ptz-slew',
+          createdAt: '2026-07-03T12:00:00.000Z',
+          deviceId: 'eo-003',
+          id: 'command-api-001',
+          projectId: 'project-001',
+          requestedBy: 'user-admin-001',
+          riskLevel: 'medium',
+          status: 'requested',
+          updatedAt: '2026-07-03T12:00:00.000Z',
+        },
+      }),
+    )
+
+    const command = await fetchCommand('command-api-001', 'http://localhost:4000')
+
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:4000/api/commands/command-api-001', undefined)
+    expect(command).toMatchObject({
+      commandType: 'ptz-slew',
+      deviceId: 'eo-003',
+      id: 'command-api-001',
+      status: 'requested',
     })
   })
 

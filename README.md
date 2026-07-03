@@ -104,8 +104,10 @@ The first backend slice is a Node.js + TypeScript + Express API that still uses 
 - `GET /api/sensor-events`
 - `GET /api/incidents`
 - `GET /api/access`
+- `GET /api/commands/:id`
 - `POST /api/devices/register`
 - `POST /api/camera-feeds/:id/snapshot`
+- `POST /api/commands/request`
 - `POST /api/sensor-events/ingest`
 - `POST /api/projects`
 

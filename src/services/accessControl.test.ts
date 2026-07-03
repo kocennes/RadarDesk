@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { getAccessScopedDashboardData, getEffectiveAccess, getProductPackages } from './accessControl'
+import { devices } from '../mocks/devices'
+import { canRequestCommand, getAccessScopedDashboardData, getEffectiveAccess, getProductPackages } from './accessControl'
 
 describe('accessControl', () => {
   it('defines package device and module permissions explicitly', () => {
@@ -46,5 +47,34 @@ describe('accessControl', () => {
     expect(dashboardData.alerts).toEqual([])
     expect(dashboardData.cameraFeeds).toEqual([])
     expect(dashboardData.projects).toEqual([])
+  })
+
+  it('allows operator-grade camera commands only when role, package, and device match', () => {
+    const adminAccess = getEffectiveAccess('user-admin-001')
+    const viewerAccess = getEffectiveAccess('user-viewer-001')
+    const cameraDevice = devices.find((device) => device.id === 'eo-003')
+
+    expect(canRequestCommand(adminAccess, cameraDevice, 'ptz-slew')).toMatchObject({
+      allowed: true,
+      requiresSupervisorApproval: false,
+    })
+    expect(canRequestCommand(viewerAccess, cameraDevice, 'ptz-slew')).toMatchObject({
+      allowed: false,
+      reason: 'User role is not allowed to request this command.',
+    })
+  })
+
+  it('requires admin C2 access and supervisor approval for countermeasure requests', () => {
+    const adminAccess = getEffectiveAccess('user-admin-001')
+    const viewerAccess = getEffectiveAccess('user-viewer-001')
+    const c2Device = devices.find((device) => device.id === 'c2-004')
+
+    expect(canRequestCommand(adminAccess, c2Device, 'countermeasure-request')).toMatchObject({
+      allowed: true,
+      requiresSupervisorApproval: true,
+    })
+    expect(canRequestCommand(viewerAccess, c2Device, 'countermeasure-request')).toMatchObject({
+      allowed: false,
+    })
   })
 })

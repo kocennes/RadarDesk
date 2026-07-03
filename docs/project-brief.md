@@ -14,6 +14,10 @@ Musteri, paket, rol ve access group modeli daha sonra kurumsal/admin yapiya geci
 
 Ornek: kamera yoksa kamera paneli bos durum gosterir; radar baglaninca radar event/incident akisi aktif olur; RF alicisi baglaninca RF event/incident akisi gorunur. Kullaniciya ilk kurulumda "bu modul paketinde yok" bariyeri cikarilmaz.
 
+Frontend parcalari sadece gorsel vitrin olarak kalmamalidir. Her yeni panel, kart, harita katmani, PPI/RF/camera/evidence gorunumu, command aksiyonu veya durum gostergesi ileride backend'den gelecek typed modelle eslesmelidir. Backend endpointi henuz hazir degilse mock data, gelecekteki gercek response'un temsilcisi gibi tasarlanir ve ilgili model/endpoint ihtiyaci TODO veya karar notuna yazilir.
+
+Hedef davranis: gercek kamera, termal kamera, radar, RF node, drone test cihazi veya countermeasure cihazlari baglandiginda frontend ayni ekranlari backend'in dondurdugu `SensorEvent`, `Incident`, `DeviceHealth`, `ThreatCandidate`, `CommandRequest/CommandResult` ve access modeline gore doldurur. UI kalici olarak kendi basina sahte cihaz tipi, yetki, alarm sonucu veya command durumu uretmez.
+
 ## Lokal Veri Saklama Karari
 
 Varsayilan mimari lokal-first olmalidir. Kamera snapshot'lari, termal olay goruntuleri, kisa klipler, alarm kanitlari, cihaz baglanti ayarlari ve operasyon loglari mumkun oldugunca backend'in calistigi lokal makinede tutulmalidir.
@@ -170,6 +174,22 @@ Threat score motoru ayri bir karar katmani olarak tasarlanmalidir. Skor; severit
 
 Target-centric focus mode, operatorun tek hedef veya incident uzerine odaklanmasini saglamalidir. Secili hedef/incident baglami harita, PPI, alarm feed, kamera/evidence ve incident panellerine yayilmali; ilk surumde resizable grid gerekmeden mevcut sabit paneller uzerinde vurgulama veya filtreleme ile uygulanmalidir.
 
+### Gercek Cihaz Komut ve C2 Katmani Karari
+
+RadarDesk su an mock data ve lokal test akisini tamamlamaya odaklanir, fakat urun yonu gercek drone, kamera, termal kamera, radar, RF node ve jammer/countermeasure cihazlarinin ileride kontrollu sekilde baglanacagini varsayar. Bu yuzden komut ve yetki katmani simdiden ayri bir backend sorumlulugu olarak planlanmalidir.
+
+Temel karar: frontend hicbir zaman dogrudan RTSP, ONVIF, vendor API, UDP/TCP radar protokolu, RF cihaz protokolu veya jammer/countermeasure protokolune komut gondermez. Frontend yalnizca backend'e kullanici niyetini ve secili hedef/cihaz baglamini iletir; backend yetki, onay, rate limit, audit ve adapter kontrollerinden sonra komutu uygular veya reddeder.
+
+Komut katmani icin ilk kapsam:
+
+- PTZ kamera yonlendirme, preset veya hedefe cevirme.
+- Termal/gorunur kamera mod veya evidence capture istekleri.
+- Radar/RF/camera hedef baglamina gore operatora onerilen slew-to-cue aksiyonlari.
+- Countermeasure/jammer gibi yuksek riskli aksiyonlarda simule/dry-run, iki asamali operator + supervisor onayi ve audit.
+- Komut durum takibi: requested, pending-approval, approved, rejected, executing, succeeded, failed, cancelled, expired.
+
+Gercek komutlar icin backend; kullanicinin customer, project/site, role, access group, product package ve cihaz sahipligini hesaplamadan komut calistirmamalidir. UI'da buton gizlemek yetki sayilmaz. Her command request ve sonucu audit log'a yazilmali; actor, rol, cihaz, proje, onay zinciri, zaman, sonuc ve hata nedeni saklanmalidir.
+
 ## Lokal Sensor Event Akisi
 
 Gercek cihaz verisi frontend'e ham olarak verilmemelidir. Backend kamera, radar, RF ve C2 kaynaklarindan gelen veriyi once typed sensor event modeline normalize etmelidir.
@@ -228,6 +248,25 @@ Hedef akis:
 4. API sadece lokal evidence metadata'si dondurur: dosya yolu, hash, zaman, kaynak feed id.
 5. Bu metadata otomatik olarak `SensorEvent.evidence` alanina baglanir.
 6. Frontend manuel snapshot butonu yerine backend tarafinda olusan event ve kanit metadata'sini gosterir.
+
+## Anti-Drone Anketinden Cikan Urun Bosluklari
+
+Bisavunma sitesindeki anti-drone gereksinim anketi incelendiginde RadarDesk'in mevcut `Project` formunun yalnizca basit proje taslagi icin yeterli oldugu, satis oncesi kesif ve teknik analiz icin ayri bir gereksinim modeli gerektigi goruldu.
+
+Anketin isaret ettigi eksik urun basliklari:
+
+- Musteri/kullanici ayrimi: basvuran kurum, son kullanici kurum, birim, yetkili kisi ve operasyonel personel sayisi ayri tutulmalidir.
+- Proje onceligi ve tedarik takvimi: aciliyet, planlanan tedarik zamani, teslimat tercihi ve saha erisim durumu `Project` status alanindan ayri modellenmelidir.
+- Tesis ve saha siniflandirmasi: askeri tesis, havalimani, enerji tesisi, liman, kritik altyapi, sanayi tesisi, VIP/kamu etkinlik alani gibi secimler gereksinim analizinde kullanilmalidir.
+- Tehdit analizi: beklenen drone tipleri, iletisim kanallari, aktivite sikligi, suru/otonom tehdit ve daha once gozlenen sistemler ayri alanlar olmalidir.
+- Teknik gereksinim matrisi: hedef frekans bantlari, RF/radar/EO-IR tespit menzili, sinyal bozucu etki yaricapi ve istenen kabiliyetler tek metin notu yerine typed alanlarla tutulmalidir.
+- Dis sistem ihtiyaci: jammer, radar, EO/IR/termal, komuta kontrol, mobil komuta merkezi ve mevcut guvenlik sistemleriyle entegrasyon gereksinimleri ayrilmalidir.
+- Operasyon kosullari: 7/24 calisma, olay bazli operasyon, mobil/arac ustu/sabit/konteyner kurulum, cevresel kosullar ve egitim seviyesi form modeline girmelidir.
+- Haritalama ve saha verisi: komuta merkezi, tesis siniri, savunma cevresi, tespit cevresi, arazi tipi ve KML/KMZ gibi ekler hassas saha verisi sayilmalidir.
+- Veri guvenligi: sifreleme/kripto, uzaktan erisim, offline/air-gapped calisma ve veri saklama suresi satis oncesi gereksinim olarak toplanabilir ama frontend tarafinda guvenlik karari gibi uygulanmamalidir.
+- Ileri gereksinimler: AI siniflandirma, cok noktali merkezi izleme, NATO/STANAG uyumlulugu, siber sertlestirme, pasif tespit, arac entegrasyonu, batarya/gunes enerjisi ve yerel teknik destek ayri karar alanlari olmalidir.
+
+Bu nedenle ileride `ProjectIntake` formu genisletilmek yerine `RequirementSurvey` veya `SiteAssessment` gibi ayri bir domain modeli tasarlanmalidir. Ilk uygulama, gercek musteri/saha bilgisi kullanmadan mock veriyle calismali; dosya yukleme ve koordinat kaydi backend yetki, validation, boyut/tur siniri, audit ve retention kararlari netlesmeden eklenmemelidir.
 
 ## 8 Adimli Gelistirme Plani
 

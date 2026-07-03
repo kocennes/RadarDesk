@@ -1,6 +1,9 @@
 import type {
   Alert,
   CameraFeed,
+  CommandRequest,
+  CommandResult,
+  CommandType,
   Device,
   DiscoveredDevice,
   EffectiveAccess,
@@ -40,6 +43,14 @@ export type IncidentReviewUpdateInput = {
   incident: Incident
   operatorNote?: string
   status: IncidentStatus
+}
+
+export type CommandRequestInput = {
+  commandType: CommandType
+  deviceId: string
+  incidentId?: string
+  reason?: string
+  targetId?: string
 }
 
 export async function fetchDashboardData(apiBaseUrl = getApiBaseUrl()): Promise<MockDashboardData> {
@@ -116,6 +127,53 @@ export async function updateIncidentReview(
     },
     method: 'PATCH',
   })
+}
+
+export async function requestCommand(
+  input: CommandRequestInput,
+  apiBaseUrl = getApiBaseUrl(),
+): Promise<CommandResult> {
+  if (!apiBaseUrl) {
+    const now = new Date().toISOString()
+    const requiresSupervisorApproval = input.commandType === 'countermeasure-request'
+
+    return {
+      command: {
+        id: `command-${Date.now()}`,
+        approvalState: requiresSupervisorApproval ? 'supervisor-required' : 'operator-approved',
+        commandType: input.commandType,
+        createdAt: now,
+        deviceId: input.deviceId,
+        incidentId: input.incidentId,
+        projectId: 'project-local-mock',
+        reason: input.reason,
+        requestedBy: 'local-mock-user',
+        riskLevel: requiresSupervisorApproval ? 'high' : input.commandType === 'ptz-slew' ? 'medium' : 'low',
+        status: requiresSupervisorApproval ? 'pending-approval' : 'requested',
+        targetId: input.targetId,
+        updatedAt: now,
+      },
+      safeMessage: requiresSupervisorApproval
+        ? 'Command request is pending supervisor approval in dry-run mode.'
+        : 'Command request accepted in dry-run mode.',
+    }
+  }
+
+  return fetchApiData<CommandResult>(apiBaseUrl, '/api/commands/request', {
+    body: JSON.stringify(input),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+  })
+}
+
+export async function fetchCommand(commandId: string, apiBaseUrl = getApiBaseUrl()): Promise<CommandRequest> {
+  if (!apiBaseUrl) {
+    throw new Error('Command lookup requires a configured API base URL.')
+  }
+
+  return fetchApiData<CommandRequest>(apiBaseUrl, `/api/commands/${commandId}`)
 }
 
 export async function disconnectDevice(device: Device, apiBaseUrl = getApiBaseUrl()): Promise<Device> {

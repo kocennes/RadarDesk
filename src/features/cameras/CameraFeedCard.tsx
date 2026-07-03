@@ -24,12 +24,21 @@ const modeLabel: Record<CameraFeed['mode'], string> = {
 }
 
 export function CameraFeedCard({ cameraFeeds }: CameraFeedCardProps) {
+  const primaryFeed = cameraFeeds.find((cameraFeed) => cameraFeed.status !== 'offline') ?? cameraFeeds[0]
+
   return (
     <Card>
       <CardHeader
         header={<Text weight="semibold">Kamera dogrulama</Text>}
         description={<Text size={200}>Kamera API entegrasyonuna hazir mock stream metadatasi</Text>}
       />
+      <div className="camera-preview" aria-label="Gorsel dogrulama video alani">
+        <div className="camera-reticle" aria-hidden="true" />
+        <Text weight="semibold">{primaryFeed?.name ?? 'Kamera feed yok'}</Text>
+        <Text className="muted" size={200}>
+          {primaryFeed ? `${primaryFeed.fieldOfView} / ${modeLabel[primaryFeed.mode]} / ${statusLabel[primaryFeed.status]}` : 'Bagli EO/IR cihaz bekleniyor'}
+        </Text>
+      </div>
       <div className="stack">
         {cameraFeeds.length === 0 ? (
           <ListState message="Mevcut veri kaynaginda kamera kanali yok" />

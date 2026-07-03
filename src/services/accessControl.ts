@@ -8,6 +8,7 @@ import type {
   AccessGroup,
   Alert,
   CameraFeed,
+  CommandType,
   Device,
   DeviceType,
   EffectiveAccess,
@@ -32,6 +33,53 @@ const roleRank: Record<UserRole, number> = {
   viewer: 1,
   operator: 2,
   admin: 3,
+}
+
+const commandRequirements: Record<
+  CommandType,
+  {
+    allowedDeviceTypes: DeviceType[]
+    minimumRole: UserRole
+    requiredModule: ProductModule
+    requiresSupervisorApproval: boolean
+  }
+> = {
+  'ptz-slew': {
+    allowedDeviceTypes: ['eo-ir'],
+    minimumRole: 'operator',
+    requiredModule: 'camera-feeds',
+    requiresSupervisorApproval: false,
+  },
+  'camera-preset': {
+    allowedDeviceTypes: ['eo-ir'],
+    minimumRole: 'operator',
+    requiredModule: 'camera-feeds',
+    requiresSupervisorApproval: false,
+  },
+  'capture-evidence': {
+    allowedDeviceTypes: ['eo-ir'],
+    minimumRole: 'operator',
+    requiredModule: 'camera-feeds',
+    requiresSupervisorApproval: false,
+  },
+  'countermeasure-request': {
+    allowedDeviceTypes: ['c2'],
+    minimumRole: 'admin',
+    requiredModule: 'c2',
+    requiresSupervisorApproval: true,
+  },
+  cancel: {
+    allowedDeviceTypes: ['c2', 'eo-ir'],
+    minimumRole: 'operator',
+    requiredModule: 'c2',
+    requiresSupervisorApproval: false,
+  },
+}
+
+export type CommandAccessDecision = {
+  allowed: boolean
+  reason: string
+  requiresSupervisorApproval: boolean
 }
 
 export function getProductPackages(): ProductPackage[] {
@@ -126,6 +174,52 @@ export function getAccessScopedDashboardData(userId = defaultMockUserId): Access
   }
 }
 
+export function canRequestCommand(
+  effectiveAccess: EffectiveAccess,
+  device: Device | null | undefined,
+  commandType: CommandType,
+): CommandAccessDecision {
+  const requirement = commandRequirements[commandType]
+
+  if (!requirement) {
+    return denyCommand('Command type is not supported.')
+  }
+
+  if (!device) {
+    return denyCommand('Command device could not be found.')
+  }
+
+  if (effectiveAccess.role === 'none') {
+    return denyCommand('User has no active access.')
+  }
+
+  if (!effectiveAccess.projectIds.includes(device.projectId)) {
+    return denyCommand('Device project is outside of user access.')
+  }
+
+  if (!effectiveAccess.allowedDeviceTypes.includes(device.type)) {
+    return denyCommand('Device type is outside of user package.')
+  }
+
+  if (!requirement.allowedDeviceTypes.includes(device.type)) {
+    return denyCommand('Command is not valid for this device type.')
+  }
+
+  if (!effectiveAccess.allowedModules.includes(requirement.requiredModule)) {
+    return denyCommand('Required command module is outside of user package.')
+  }
+
+  if (roleRank[effectiveAccess.role] < roleRank[requirement.minimumRole]) {
+    return denyCommand('User role is not allowed to request this command.')
+  }
+
+  return {
+    allowed: true,
+    reason: 'Command request is allowed in dry-run/mock mode.',
+    requiresSupervisorApproval: requirement.requiresSupervisorApproval,
+  }
+}
+
 function createEmptyAccess(userId: string): EffectiveAccess {
   return {
     userId,
@@ -146,5 +240,13 @@ function cloneEffectiveAccess(effectiveAccess: EffectiveAccess): EffectiveAccess
     packageIds: [...effectiveAccess.packageIds],
     allowedDeviceTypes: [...effectiveAccess.allowedDeviceTypes],
     allowedModules: [...effectiveAccess.allowedModules],
+  }
+}
+
+function denyCommand(reason: string): CommandAccessDecision {
+  return {
+    allowed: false,
+    reason,
+    requiresSupervisorApproval: false,
   }
 }

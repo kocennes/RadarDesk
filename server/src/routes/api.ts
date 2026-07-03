@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { accessRouter } from './access'
 import { alertsRouter } from './alerts'
 import { cameraFeedsRouter } from './cameraFeeds'
+import { commandsRouter } from './commands'
 import { deviceDiscoveryRouter } from './deviceDiscovery'
 import { devicesRouter } from './devices'
 import { incidentsRouter } from './incidents'
@@ -18,3 +19,4 @@ apiRouter.use('/api', sensorEventsRouter)
 apiRouter.use('/api', incidentsRouter)
 apiRouter.use('/api', projectsRouter)
 apiRouter.use('/api', cameraFeedsRouter)
+apiRouter.use('/api', commandsRouter)

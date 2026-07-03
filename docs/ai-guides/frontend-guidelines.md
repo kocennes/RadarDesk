@@ -7,6 +7,9 @@ Bu rehber React, TypeScript, CSS, component, form, dashboard, tablo ve harita ek
 - Ilk ekran gercek isi yaptirsin; gereksiz landing/hero tasarimindan kacin.
 - Bu projenin simdiki ilk isi lokal cihaz kurulumudur: cihaz kesfi, secim, adlandirma ve kayitli cihaz listesi admin panel ayarlarindan once gelmelidir.
 - Operasyonel uygulamalarda sade, okunabilir ve is odakli tasarim kullan.
+- Yeni frontend parcasi sadece gorsel sus olarak eklenmemelidir; her panel, kart, buton, harita katmani veya durum gostergesi bir backend/domain modeliyle eslesmelidir.
+- Backend modeli henuz hazir degilse frontend parcasi mock veriyle calisabilir, fakat hangi gelecekteki model veya endpoint ile beslenecegi TODO veya ilgili karar notunda yazilmalidir.
+- Gercek veri geldiginde ekran davranisi backend response'una gore sekillenmelidir; UI kendi basina cihaz tipi, yetki, paket, alarm, command veya sensor sonucu uydurmamalidir.
 - Kullanici ekranda ne yapacagini tahmin edebilmeli.
 - Bilgi hiyerarsisi net olmali: baslik, aksiyon, icerik, durum.
 - UI; loading, empty, error ve success durumlarini gostermeli.
@@ -81,6 +84,8 @@ Dashboard'da kullanici ayni anda cok bilgi gorecegi icin:
 ## UI Kontrol Listesi
 
 - [ ] Component gorevi net.
+- [ ] Componentin beslendigi backend/domain modeli veya gelecekteki endpoint belli.
+- [ ] Mock veri kullaniliyorsa gercek API/model gecisi not edildi.
 - [ ] Loading/empty/error durumlari var.
 - [ ] Formlarda label ve hata mesaji var.
 - [ ] Mobil/dar ekran dusunuldu.
