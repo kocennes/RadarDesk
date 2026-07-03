@@ -463,7 +463,7 @@ function CameraFeedCard({
         <span>{slewToCueState.reason}</span>
       </div>
       {commandMetadata ? <div className="c2-command-note">{commandMetadata.command_type} / dry-run / {commandMetadata.command_id}</div> : null}
-      {isEvidenceOpen ? <CameraEvidencePanel evidences={evidences} /> : null}
+      {isEvidenceOpen ? <CameraEvidencePanel evidences={evidences} onClose={() => setIsEvidenceOpen(false)} /> : null}
     </section>
   )
 }
@@ -496,12 +496,17 @@ function CameraEvidenceRail({ evidences, onOpen }: { evidences: CameraEvidenceEv
   )
 }
 
-function CameraEvidencePanel({ evidences }: { evidences: CameraEvidenceEvent[] }) {
+function CameraEvidencePanel({ evidences, onClose }: { evidences: CameraEvidenceEvent[]; onClose: () => void }) {
   return (
     <div className="c2-evidence-panel">
       <div className="c2-evidence-heading">
-        <strong>Camera Evidence</strong>
-        <span>Mock snapshot referanslari</span>
+        <div>
+          <strong>Camera Evidence</strong>
+          <span>Mock snapshot referanslari</span>
+        </div>
+        <button aria-label="Snapshot panelini kucult" onClick={onClose} type="button">
+          Geri
+        </button>
       </div>
       <div className="c2-evidence-list c2-scroll">
         {evidences.length === 0 ? (

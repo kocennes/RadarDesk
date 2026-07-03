@@ -923,11 +923,17 @@ body {
 }
 
 .c2-evidence-heading {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 58px;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   padding: 10px 10px 0;
+}
+
+.c2-evidence-heading > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
 .c2-evidence-heading strong {
@@ -943,6 +949,22 @@ body {
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.c2-evidence-heading button {
+  height: 28px;
+  border: 1px solid rgba(0, 229, 255, 0.44);
+  border-radius: 5px;
+  background: rgba(0, 229, 255, 0.1);
+  color: var(--c2-cyan);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.c2-evidence-heading button:hover {
+  background: rgba(0, 229, 255, 0.18);
 }
 
 .c2-evidence-list {
